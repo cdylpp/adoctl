@@ -2,7 +2,7 @@ import base64
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from urllib.parse import quote
+from urllib.parse import quote, unquote, urlsplit, urlunsplit
 
 import requests
 import yaml
@@ -35,6 +35,30 @@ def _get(cfg: ADOConfig, url: str, params: Optional[Dict[str, str]] = None) -> D
     return resp.json()
 
 
+def _encode_path_segment(value: str) -> str:
+    return quote(unquote(value), safe="")
+
+
+def _join_url(base_url: str, *segments: Optional[str]) -> str:
+    split = urlsplit(base_url)
+    base_path = split.path.rstrip("/")
+
+    cleaned = []
+    for seg in segments:
+        if seg is None:
+            continue
+        seg = str(seg).strip("/")
+        if not seg:
+            continue
+        cleaned.append(_encode_path_segment(seg))
+
+    path = base_path
+    if cleaned:
+        path = f"{base_path}/{'/'.join(cleaned)}"
+
+    return urlunsplit((split.scheme, split.netloc, path, split.query, split.fragment))
+
+
 def sync_ado_to_yaml(
     cfg: ADOConfig,
     out_dir: str,
@@ -54,15 +78,15 @@ def sync_ado_to_yaml(
     out_path.mkdir(parents=True, exist_ok=True)
 
     # --- Projects (org-level)
-    projects_url = f"{cfg.org_url}/_apis/projects"
+    projects_url = _join_url(cfg.org_url, "_apis", "projects")
     projects = _get(cfg, projects_url).get("value", [])
 
     # --- Classification nodes (project-level): Areas and Iterations
     if not cfg.project:
         raise ValueError("cfg.project is required to sync area/iteration paths.")
 
-    areas_url = f"{cfg.org_url}/{cfg.project}/_apis/wit/classificationnodes/areas"
-    iters_url = f"{cfg.org_url}/{cfg.project}/_apis/wit/classificationnodes/iterations"
+    areas_url = _join_url(cfg.org_url, cfg.project, "_apis", "wit", "classificationnodes", "areas")
+    iters_url = _join_url(cfg.org_url, cfg.project, "_apis", "wit", "classificationnodes", "iterations")
 
     # depth controls how many child levels come back
     areas_tree = _get(cfg, areas_url, params={"$depth": "100"})
@@ -90,8 +114,15 @@ def sync_ado_to_yaml(
     wit_contract: Dict[str, Any] = {"schema_version": "1.0", "work_item_types": {}}
 
     for wit in wit_names:
-        wit_url = quote(wit, safe="")
-        fields_url = f"{cfg.org_url}/{cfg.project}/_apis/wit/workitemtypes/{wit_url}/fields"
+        fields_url = _join_url(
+            cfg.org_url,
+            cfg.project,
+            "_apis",
+            "wit",
+            "workitemtypes",
+            wit,
+            "fields",
+        )
         fields_json = _get(cfg, fields_url)
         fields = fields_json.get("value", [])
 

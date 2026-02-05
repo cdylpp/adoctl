@@ -11,7 +11,7 @@ Assumes:
 - conda `4.9.2`
 - Python `3.8.5`
 
-- Create conda env: `conda env create -f environment.yml`
+- Create conda env: `conda env create --offline -f environment.yml`
 - Activate: `conda activate adoctl`
 - Run: `python -m adoctl sync --help`
 

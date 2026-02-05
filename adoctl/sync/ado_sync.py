@@ -3,13 +3,13 @@ from __future__ import annotations
 import datetime as dt
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
-from urllib.parse import quote
 
 import yaml
 
 from adoctl.ado_client.http import ado_get
 from adoctl.ado_client.models import ADOConfig
 from adoctl.util.fs import atomic_write_text, ensure_dir
+from adoctl.util.url import join_url
 
 
 def _flatten_classification_paths(node: Dict[str, Any]) -> List[str]:
@@ -53,7 +53,7 @@ def sync_ado_to_yaml(
     requested = set(sections or ["projects", "teams", "paths", "wit"])
 
     if "projects" in requested:
-        projects_url = f"{cfg.org_url}/_apis/projects"
+        projects_url = join_url(cfg.org_url, "_apis", "projects")
         projects = ado_get(cfg, projects_url).get("value", [])
         normalized = [
             {
@@ -71,7 +71,7 @@ def sync_ado_to_yaml(
     if "teams" in requested:
         if not cfg.project:
             raise ValueError("cfg.project is required to sync teams.")
-        teams_url = f"{cfg.org_url}/{cfg.project}/_apis/teams"
+        teams_url = join_url(cfg.org_url, cfg.project, "_apis", "teams")
         teams = ado_get(cfg, teams_url).get("value", [])
         normalized_teams = [
             {"id": t.get("id"), "name": t.get("name"), "url": t.get("url")} for t in teams if isinstance(t, dict)
@@ -82,8 +82,8 @@ def sync_ado_to_yaml(
         if not cfg.project:
             raise ValueError("cfg.project is required to sync area/iteration paths.")
 
-        areas_url = f"{cfg.org_url}/{cfg.project}/_apis/wit/classificationnodes/areas"
-        iters_url = f"{cfg.org_url}/{cfg.project}/_apis/wit/classificationnodes/iterations"
+        areas_url = join_url(cfg.org_url, cfg.project, "_apis", "wit", "classificationnodes", "areas")
+        iters_url = join_url(cfg.org_url, cfg.project, "_apis", "wit", "classificationnodes", "iterations")
 
         areas_tree = ado_get(cfg, areas_url, params={"$depth": "100"})
         iters_tree = ado_get(cfg, iters_url, params={"$depth": "100"})
@@ -102,8 +102,15 @@ def sync_ado_to_yaml(
         wit_contract: Dict[str, Any] = {"schema_version": "1.0", "work_item_types": {}}
 
         for wit in wit_names:
-            wit_url = quote(wit, safe="")
-            fields_url = f"{cfg.org_url}/{cfg.project}/_apis/wit/workitemtypes/{wit_url}/fields"
+            fields_url = join_url(
+                cfg.org_url,
+                cfg.project,
+                "_apis",
+                "wit",
+                "workitemtypes",
+                wit,
+                "fields",
+            )
             fields_json = ado_get(cfg, fields_url)
             fields = fields_json.get("value", [])
 
