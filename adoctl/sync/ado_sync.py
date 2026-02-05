@@ -125,11 +125,10 @@ def sync_ado_to_yaml(
 
     sync_state = {
         "schema_version": "1.0",
-        "synced_at_utc": dt.datetime.now(dt.UTC).isoformat(),
+        "synced_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
         "org_url": cfg.org_url,
         "project": cfg.project,
         "api_version": cfg.api_version,
         "sections": sorted(requested),
     }
     _dump_yaml(sync_state, out_path / "_sync_state.yaml")
-

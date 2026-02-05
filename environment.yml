@@ -2,8 +2,7 @@ name: adoctl
 channels:
   - conda-forge
 dependencies:
-  - python>=3.11
+  - python=3.8.5
   - requests
   - pyyaml
   - jsonschema
-
