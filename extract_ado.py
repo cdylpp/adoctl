@@ -1,7 +1,8 @@
 import base64
-import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List, Optional
+from urllib.parse import quote
 
 import requests
 import yaml
@@ -12,7 +13,7 @@ class ADOConfig:
     org_url: str              # e.g., "https://dev.azure.com/MyOrg"
     project: Optional[str]    # some endpoints are org-level; others project-level
     pat: str                  # personal access token
-    api_version: str = "7.1-preview.1"
+    api_version: str = "6.0"
 
 
 def _auth_header(pat: str) -> Dict[str, str]:
@@ -49,6 +50,8 @@ def sync_ado_to_yaml(
     wit_names: list like ["Feature", "User Story"] based on your process template.
     """
     wit_names = wit_names or ["Feature", "User Story"]
+    out_path = Path(out_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
 
     # --- Projects (org-level)
     projects_url = f"{cfg.org_url}/_apis/projects"
@@ -65,13 +68,19 @@ def sync_ado_to_yaml(
     areas_tree = _get(cfg, areas_url, params={"$depth": "100"})
     iters_tree = _get(cfg, iters_url, params={"$depth": "100"})
 
-    def flatten_paths(node: Dict[str, Any], prefix: str = "") -> List[str]:
-        name = node.get("name", "")
-        path = f"{prefix}\\{name}" if prefix else name
-        paths = [path]
-        for child in node.get("children", []) or []:
-            paths.extend(flatten_paths(child, path))
-        return paths
+    def flatten_paths(node: Dict[str, Any]) -> List[str]:
+        paths: List[str] = []
+
+        def walk(n: Dict[str, Any]) -> None:
+            path = n.get("path")
+            if isinstance(path, str) and path:
+                paths.append(path.lstrip("\\"))
+            for child in (n.get("children") or []):
+                if isinstance(child, dict):
+                    walk(child)
+
+        walk(node)
+        return sorted(set(paths))
 
     area_paths = flatten_paths(areas_tree)
     iteration_paths = flatten_paths(iters_tree)
@@ -81,7 +90,8 @@ def sync_ado_to_yaml(
     wit_contract: Dict[str, Any] = {"schema_version": "1.0", "work_item_types": {}}
 
     for wit in wit_names:
-        fields_url = f"{cfg.org_url}/{cfg.project}/_apis/wit/workitemtypes/{wit}/fields"
+        wit_url = quote(wit, safe="")
+        fields_url = f"{cfg.org_url}/{cfg.project}/_apis/wit/workitemtypes/{wit_url}/fields"
         fields_json = _get(cfg, fields_url)
         fields = fields_json.get("value", [])
 
@@ -100,7 +110,7 @@ def sync_ado_to_yaml(
 
     # --- Write YAML files
     def dump_yaml(obj: Any, filename: str) -> None:
-        path = f"{out_dir.rstrip('/')}/{filename}"
+        path = out_path / filename
         with open(path, "w", encoding="utf-8") as f:
             yaml.safe_dump(obj, f, sort_keys=False, allow_unicode=True)
 

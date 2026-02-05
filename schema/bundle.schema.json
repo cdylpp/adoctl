@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ADO Decomposition Bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "bundle_id", "source", "context", "work_items"],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "bundle_id": { "type": "string" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_name", "prompt_id", "generated_at"],
+      "properties": {
+        "agent_name": { "type": "string" },
+        "prompt_id": { "type": "string" },
+        "generated_at": { "type": "string" }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "work_items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["local_id", "type", "title", "description", "acceptance_criteria", "tags", "relations"],
+        "properties": {
+          "local_id": { "type": "string" },
+          "type": { "type": "string", "enum": ["Feature", "UserStory"] },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "acceptance_criteria": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "fields": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "relations": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["parent_local_id"],
+            "properties": {
+              "parent_local_id": { "type": ["string", "null"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

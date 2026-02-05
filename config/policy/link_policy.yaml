@@ -1,0 +1,9 @@
+# Team governance rules for ADO links.
+schema_version: "1.0"
+allowed_link_types:
+  - parent-child
+max_depth: 2
+forbid_double_nesting:
+  - Feature
+  - UserStory
+

@@ -1,5 +1,11 @@
 # AGENT.md — ADO Decomposition Outbox + Writer CLI
 
+
+Project Root: `/Users/codylepp/Development/ado cli/adoctl`
+Current Tasking: `./TODO.md`
+Specifications: `./specs.md`
+
+
 ## Purpose (Why this project exists)
 
 You are supporting the build-out of a **Python CLI tool** (`adoctl`) that streamlines Azure DevOps (ADO) work management by:
@@ -17,13 +23,32 @@ This eliminates manual copy/paste and reformatting when moving from “planning 
 
 You are a **software engineer** contributing to a production-quality internal tool.
 
-Conduct yourself accordingly:
+Principles to Live by:
 
-- prioritize **correctness**, **clarity**, and **maintainability**
-- write **readable code** with sensible naming, docstrings, and structured error handling
-- do not deliver half-baked or speculative solutions
-- if a requirement is unclear, **ask for clarification before implementing**
-- if you see risk (security, data loss, incorrect writes), **raise it explicitly**
+SOLID Principles (Object-Oriented Design):
+
+- Single Responsibility Principle: A class or module should have one, and only one, reason to change.
+- Open/Closed Principle: Software entities should be open for extension but closed for modification.
+- Liskov Substitution Principle: Derived classes must be substitutable for their base classes.
+- Interface Segregation Principle: Clients should not be forced to depend on interfaces they do not use.
+- Dependency Inversion Principle: Depend on abstractions (interfaces) rather than concrete implementations.
+
+Core Code-Level Principles:
+
+- KISS (Keep It Simple, Stupid): Prioritize simplicity to avoid overengineering and make code easier to maintain.
+- DRY (Don't Repeat Yourself): Avoid duplicate code to reduce bugs and maintenance effort.
+- YAGNI (You Aren't Gonna Need It): Do not add functionality until it is deemed necessary.
+- Separation of Concerns: Divide code into distinct sections, each addressing a separate concern.
+- High Cohesion/Low Coupling: Group related code together (high cohesion) and minimize dependencies between modules (low coupling).
+
+Fundamental Design & Development Principles:
+
+- Abstraction: Hiding complex implementation details and showing only necessary features.
+- Encapsulation: Bundling data and methods, protecting them from outside access.
+- Reusability: Creating components that can be used across different parts of the system or in future projects.
+- Test-Driven Development (TDD): Writing automated tests before writing the actual code to ensure requirements are met.
+- Continuous Integration/Continuous Deployment (CI/CD): Frequently merging code changes and automating deployment to ensure stability.
+- Boy-Scout Rule: Leaving the code cleaner than you found it. 
 
 If you are blocked, request guidance early rather than guessing.
 
@@ -42,16 +67,9 @@ If you are blocked, request guidance early rather than guessing.
 
 ### Azure DevOps Integration
 
-- Must use **ADO REST APIs** for:
-  - metadata sync (projects, teams, paths, WIT fields)
-  - work item creation (JSON Patch)
-  - parent-child linking only
+Must use ADO REST APIS:
 
-### Security
-
-- PATs or credentials must not be logged
-- logs must redact secrets
-- prefer environment variables for secrets
+- version:  6.0
 
 ---
 

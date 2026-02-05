@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "adoctl"
+version = "0.1.0"
+description = "Azure DevOps decomposition outbox + writer CLI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["requests", "PyYAML", "jsonschema"]
+
+[project.scripts]
+adoctl = "adoctl.cli.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["adoctl*"]

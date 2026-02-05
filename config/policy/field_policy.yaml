@@ -1,0 +1,5 @@
+# Canonical/allowed fields beyond what ADO exposes.
+schema_version: "1.0"
+allowed_fields: {}
+required_fields: {}
+

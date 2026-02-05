@@ -1,0 +1,135 @@
+from __future__ import annotations
+
+import datetime as dt
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional
+from urllib.parse import quote
+
+import yaml
+
+from adoctl.ado_client.http import ado_get
+from adoctl.ado_client.models import ADOConfig
+from adoctl.util.fs import atomic_write_text, ensure_dir
+
+
+def _flatten_classification_paths(node: Dict[str, Any]) -> List[str]:
+    paths: List[str] = []
+
+    def walk(n: Dict[str, Any]) -> None:
+        path = n.get("path")
+        if isinstance(path, str) and path:
+            # ADO returns paths like "\\Project\\Area\\Child"
+            paths.append(path.lstrip("\\"))
+        for child in (n.get("children") or []):
+            if isinstance(child, dict):
+                walk(child)
+
+    walk(node)
+    return sorted(set(paths))
+
+
+def _dump_yaml(obj: Any, path: Path) -> None:
+    ensure_dir(path.parent)
+    atomic_write_text(
+        path,
+        yaml.safe_dump(obj, sort_keys=False, allow_unicode=True),
+    )
+
+
+def sync_ado_to_yaml(
+    cfg: ADOConfig,
+    out_dir: str,
+    wit_names: Optional[List[str]] = None,
+    sections: Optional[Iterable[str]] = None,
+) -> None:
+    """
+    Syncs selected ADO metadata into YAML files under out_dir.
+
+    sections: iterable of {"projects", "teams", "paths", "wit"}
+    """
+    out_path = Path(out_dir)
+    ensure_dir(out_path)
+
+    requested = set(sections or ["projects", "teams", "paths", "wit"])
+
+    if "projects" in requested:
+        projects_url = f"{cfg.org_url}/_apis/projects"
+        projects = ado_get(cfg, projects_url).get("value", [])
+        normalized = [
+            {
+                "id": p.get("id"),
+                "name": p.get("name"),
+                "state": p.get("state"),
+                "revision": p.get("revision"),
+                "visibility": p.get("visibility"),
+                "url": p.get("url"),
+            }
+            for p in projects
+        ]
+        _dump_yaml({"projects": normalized}, out_path / "projects.yaml")
+
+    if "teams" in requested:
+        if not cfg.project:
+            raise ValueError("cfg.project is required to sync teams.")
+        teams_url = f"{cfg.org_url}/{cfg.project}/_apis/teams"
+        teams = ado_get(cfg, teams_url).get("value", [])
+        normalized_teams = [
+            {"id": t.get("id"), "name": t.get("name"), "url": t.get("url")} for t in teams if isinstance(t, dict)
+        ]
+        _dump_yaml({"teams": normalized_teams}, out_path / "teams.yaml")
+
+    if "paths" in requested:
+        if not cfg.project:
+            raise ValueError("cfg.project is required to sync area/iteration paths.")
+
+        areas_url = f"{cfg.org_url}/{cfg.project}/_apis/wit/classificationnodes/areas"
+        iters_url = f"{cfg.org_url}/{cfg.project}/_apis/wit/classificationnodes/iterations"
+
+        areas_tree = ado_get(cfg, areas_url, params={"$depth": "100"})
+        iters_tree = ado_get(cfg, iters_url, params={"$depth": "100"})
+
+        area_paths = _flatten_classification_paths(areas_tree)
+        iteration_paths = _flatten_classification_paths(iters_tree)
+
+        _dump_yaml({"area_paths": area_paths}, out_path / "paths_area.yaml")
+        _dump_yaml({"iteration_paths": iteration_paths}, out_path / "paths_iteration.yaml")
+
+    if "wit" in requested:
+        if not cfg.project:
+            raise ValueError("cfg.project is required to sync work item type fields.")
+
+        wit_names = wit_names or ["Feature", "User Story"]
+        wit_contract: Dict[str, Any] = {"schema_version": "1.0", "work_item_types": {}}
+
+        for wit in wit_names:
+            wit_url = quote(wit, safe="")
+            fields_url = f"{cfg.org_url}/{cfg.project}/_apis/wit/workitemtypes/{wit_url}/fields"
+            fields_json = ado_get(cfg, fields_url)
+            fields = fields_json.get("value", [])
+
+            wit_contract["work_item_types"][wit] = {
+                "fields": [
+                    {
+                        "name": f.get("name"),
+                        "reference_name": f.get("referenceName"),
+                        "type": f.get("type"),
+                        "read_only": f.get("readOnly", False),
+                        "required": f.get("required", False),
+                    }
+                    for f in fields
+                    if isinstance(f, dict)
+                ]
+            }
+
+        _dump_yaml(wit_contract, out_path / "wit_contract.yaml")
+
+    sync_state = {
+        "schema_version": "1.0",
+        "synced_at_utc": dt.datetime.now(dt.UTC).isoformat(),
+        "org_url": cfg.org_url,
+        "project": cfg.project,
+        "api_version": cfg.api_version,
+        "sections": sorted(requested),
+    }
+    _dump_yaml(sync_state, out_path / "_sync_state.yaml")
+
