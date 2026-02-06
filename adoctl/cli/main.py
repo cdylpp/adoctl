@@ -6,12 +6,16 @@ import sys
 from typing import List, Optional
 
 from adoctl.ado_client.models import ADOConfig
+from adoctl.cli.home import run_home_screen_loop
+from adoctl.config.context import CLIContext, load_cli_context, save_cli_context
 from adoctl.sync.ado_sync import sync_ado_to_yaml
 
 
 def _add_global_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--org-url", required=True, help='ADO org URL, e.g. "https://dev.azure.com/MyOrg"')
-    parser.add_argument("--project", help="ADO project name (required for paths/wit/teams)")
+    parser.add_argument("--org-url", help='ADO org URL, e.g. "https://dev.azure.com/MyOrg"')
+    parser.add_argument("--project", help="ADO project name")
+    parser.add_argument("--team", help="Team name to store in local CLI context")
+    parser.add_argument("--current-iteration", help="Current iteration path to store in local CLI context")
     parser.add_argument(
         "--pat-env",
         default="ADO_PAT",
@@ -33,7 +37,7 @@ def _load_pat_from_env(var_name: str) -> str:
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="adoctl", description="ADO decomposition outbox + writer CLI")
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command", required=False)
 
     sync = subparsers.add_parser("sync", help="Sync ADO metadata into config/generated")
     _add_global_args(sync)
@@ -48,8 +52,19 @@ def _build_parser() -> argparse.ArgumentParser:
     group.add_argument("--all", action="store_true", help="Sync projects, teams, paths, and WIT (default)")
     group.add_argument("--projects", action="store_true", help="Sync projects only")
     group.add_argument("--paths", action="store_true", help="Sync area + iteration paths only")
+    group.add_argument("--teams-only", action="store_true", help="Sync teams only")
     group.add_argument("--wit-only", action="store_true", help="Sync WIT fields only")
-    group.add_argument("--teams", action="store_true", help="Sync teams only")
+
+    subparsers.add_parser("home", help="Show interactive home screen")
+
+    context_cmd = subparsers.add_parser("context", help="View or update local CLI context")
+    context_sub = context_cmd.add_subparsers(dest="context_cmd", required=True)
+    context_sub.add_parser("show", help="Show currently saved context values")
+    context_set = context_sub.add_parser("set", help="Set one or more context values")
+    context_set.add_argument("--org-url", help='ADO org URL, e.g. "https://dev.azure.com/MyOrg"')
+    context_set.add_argument("--project", help="ADO project name")
+    context_set.add_argument("--team", help="Team name")
+    context_set.add_argument("--current-iteration", help="Current iteration path")
 
     outbox = subparsers.add_parser("outbox", help="Outbox commands")
     outbox_sub = outbox.add_subparsers(dest="outbox_cmd", required=True)
@@ -70,22 +85,82 @@ def _sync_sections(args: argparse.Namespace) -> List[str]:
         return ["projects"]
     if args.paths:
         return ["paths"]
+    if args.teams_only:
+        return ["teams"]
     if args.wit_only:
         return ["wit"]
-    if args.teams:
-        return ["teams"]
-    return ["projects", "teams", "paths", "wit"]
+    return ["projects", "paths", "teams", "wit"]
+
+
+def _merge_context(
+    base: CLIContext,
+    org_url: Optional[str] = None,
+    project: Optional[str] = None,
+    team: Optional[str] = None,
+    current_iteration: Optional[str] = None,
+) -> CLIContext:
+    return CLIContext(
+        org_url=org_url or base.org_url,
+        project=project or base.project,
+        team=team or base.team,
+        current_iteration=current_iteration or base.current_iteration,
+    )
 
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
+    context = load_cli_context()
+
+    if args.command is None or args.command == "home":
+        return run_home_screen_loop()
+
+    if args.command == "context":
+        if args.context_cmd == "show":
+            print(f"org_url: {context.org_url or '<not set>'}")
+            print(f"project: {context.project or '<not set>'}")
+            print(f"team: {context.team or '<not set>'}")
+            print(f"current_iteration: {context.current_iteration or '<not set>'}")
+            return 0
+
+        if args.context_cmd == "set":
+            updated = _merge_context(
+                context,
+                org_url=args.org_url,
+                project=args.project,
+                team=args.team,
+                current_iteration=args.current_iteration,
+            )
+            if updated == context:
+                parser.error("No updates provided. Pass at least one of --org-url/--project/--team/--current-iteration.")
+            save_cli_context(updated)
+            print("Context updated.")
+            return 0
 
     if args.command == "sync":
-        pat = _load_pat_from_env(args.pat_env)
-        cfg = ADOConfig(org_url=args.org_url, project=args.project, pat=pat, api_version=args.api_version)
         sections = _sync_sections(args)
+        org_url = args.org_url or context.org_url
+        project = args.project or context.project
+
+        if not org_url:
+            parser.error("Missing org URL. Pass --org-url or set it via `adoctl home` / `adoctl context set --org-url`.")
+        if any(section in {"paths", "teams", "wit"} for section in sections) and not project:
+            parser.error(
+                "Missing project. Pass --project or set it via `adoctl home` / `adoctl context set --project`."
+            )
+
+        pat = _load_pat_from_env(args.pat_env)
+        cfg = ADOConfig(org_url=org_url, project=project, pat=pat, api_version=args.api_version)
         sync_ado_to_yaml(cfg=cfg, out_dir=args.out_dir, wit_names=args.wit, sections=sections)
+        save_cli_context(
+            _merge_context(
+                context,
+                org_url=org_url,
+                project=project,
+                team=args.team,
+                current_iteration=args.current_iteration,
+            )
+        )
         return 0
 
     if args.command == "outbox" and args.outbox_cmd == "validate":
@@ -98,4 +173,3 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     parser.print_help()
     return 2
-

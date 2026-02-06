@@ -1,6 +1,14 @@
 
 # TODO
 
+## AGENT Tasks
+
+- [X] Add menu options for CLI to select team
+- [X] Store selected team in config files
+- [X] Load team upon starting the CLI
+- [X] Display the "home" screen for the CLI as the first them: show ORG, PROJECT, TEAM, and CURRENT ITERATION. If these are not added to the config files, add them. Allow the user to change these variables at anytime when using the CLI. 
+- [X] The welcome screen should be user friendly in the sense that it should be very clear, neat and easy to read.
+
 ## Product Owner / Process Owner (you / team lead)
 
 - Define and lock:

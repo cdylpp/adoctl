@@ -13,7 +13,7 @@ class ADOConfig:
     org_url: str              # e.g., "https://dev.azure.com/MyOrg"
     project: Optional[str]    # some endpoints are org-level; others project-level
     pat: str                  # personal access token
-    api_version: str = "6.0"
+    api_version: str = "5.0"
 
 
 def _auth_header(pat: str) -> Dict[str, str]:
@@ -73,7 +73,17 @@ def sync_ado_to_yaml(
 
     wit_names: list like ["Feature", "User Story"] based on your process template.
     """
-    wit_names = wit_names or ["Feature", "User Story"]
+    if wit_names:
+        resolved_wit_names = list(wit_names)
+    else:
+        if not cfg.project:
+            raise ValueError("cfg.project is required to list work item types.")
+        wit_list_url = _join_url(cfg.org_url, cfg.project, "_apis", "wit", "workitemtypes")
+        wit_list = _get(cfg, wit_list_url).get("value", [])
+        resolved_wit_names = [
+            w.get("name") for w in wit_list if isinstance(w, dict) and isinstance(w.get("name"), str)
+        ]
+        resolved_wit_names.sort()
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
 
@@ -113,7 +123,7 @@ def sync_ado_to_yaml(
     # Endpoint: /_apis/wit/workitemtypes/{type}/fields
     wit_contract: Dict[str, Any] = {"schema_version": "1.0", "work_item_types": {}}
 
-    for wit in wit_names:
+    for wit in resolved_wit_names:
         fields_url = _join_url(
             cfg.org_url,
             cfg.project,

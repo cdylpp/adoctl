@@ -18,3 +18,10 @@ def policy_config_dir() -> Path:
 def outbox_dir() -> Path:
     return repo_root() / "outbox"
 
+
+def local_config_dir() -> Path:
+    return repo_root() / "config" / "local"
+
+
+def cli_context_path() -> Path:
+    return local_config_dir() / "context.yaml"

@@ -1,9 +1,11 @@
 # AGENT.md — ADO Decomposition Outbox + Writer CLI
 
-
 Project Root: `/Users/codylepp/Development/ado cli/adoctl`
 Current Tasking: `./TODO.md`
+  When completed with a task: check the box to ensure it is tracked i.e.,  - [X] 
 Specifications: `./specs.md`
+
+
 
 
 ## Purpose (Why this project exists)
@@ -279,3 +281,70 @@ Do not proceed with assumptions that could cause incorrect ADO writes.
     }
   ]
 }
+---
+
+## How To Use ADO REST API
+
+### Links
+
+Adding Links
+
+```
+PATCH https://dev.azure.com/fabrikam/_apis/wit/workitems/{id}?api-version=7.2-preview.3
+
+[
+  {
+    "op": "test",
+    "path": "/rev",
+    "value": 3
+  },
+  {
+    "op": "add",
+    "path": "/relations/-",
+    "value": {
+      "rel": "System.LinkTypes.Dependency-forward",
+      "url": "https://dev.azure.com/fabrikam/_apis/wit/workItems/300",
+      "attributes": {
+        "comment": "Making a new link for the dependency"
+      }
+    }
+  }
+]
+```
+
+We only use parent child links. Here is an example:
+
+```
+    {
+      "attributes": {
+        "usage": "workItemLink",
+        "editable": false,
+        "enabled": true,
+        "acyclic": true,
+        "directional": true,
+        "singleTarget": false,
+        "topology": "tree",
+        "isForward": true,
+        "oppositeEndReferenceName": "System.LinkTypes.Hierarchy-Reverse"
+      },
+      "referenceName": "System.LinkTypes.Hierarchy-Forward",
+      "name": "Child",
+      "url": "https://fabrikam:8080/tfs/_apis/wit/workItemRelationTypes/System.LinkTypes.Hierarchy-Forward"
+    },
+    {
+      "attributes": {
+        "usage": "workItemLink",
+        "editable": false,
+        "enabled": true,
+        "acyclic": true,
+        "directional": true,
+        "singleTarget": false,
+        "topology": "tree",
+        "isForward": false,
+        "oppositeEndReferenceName": "System.LinkTypes.Hierarchy-Forward"
+      },
+      "referenceName": "System.LinkTypes.Hierarchy-Reverse",
+      "name": "Parent",
+      "url": "https://fabrikam:8080/tfs/_apis/wit/workItemRelationTypes/System.LinkTypes.Hierarchy-Reverse"
+    },
+  ```

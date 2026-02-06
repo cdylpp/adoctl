@@ -10,4 +10,3 @@ class ADOConfig:
     pat: str
     project: Optional[str] = None
     api_version: str = "6.0"
-

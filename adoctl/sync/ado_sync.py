@@ -45,12 +45,12 @@ def sync_ado_to_yaml(
     """
     Syncs selected ADO metadata into YAML files under out_dir.
 
-    sections: iterable of {"projects", "teams", "paths", "wit"}
+    sections: iterable of {"projects", "paths", "teams", "wit"}
     """
     out_path = Path(out_dir)
     ensure_dir(out_path)
 
-    requested = set(sections or ["projects", "teams", "paths", "wit"])
+    requested = set(sections or ["projects", "paths", "teams", "wit"])
 
     if "projects" in requested:
         projects_url = join_url(cfg.org_url, "_apis", "projects")
@@ -68,16 +68,6 @@ def sync_ado_to_yaml(
         ]
         _dump_yaml({"projects": normalized}, out_path / "projects.yaml")
 
-    if "teams" in requested:
-        if not cfg.project:
-            raise ValueError("cfg.project is required to sync teams.")
-        teams_url = join_url(cfg.org_url, cfg.project, "_apis", "teams")
-        teams = ado_get(cfg, teams_url).get("value", [])
-        normalized_teams = [
-            {"id": t.get("id"), "name": t.get("name"), "url": t.get("url")} for t in teams if isinstance(t, dict)
-        ]
-        _dump_yaml({"teams": normalized_teams}, out_path / "teams.yaml")
-
     if "paths" in requested:
         if not cfg.project:
             raise ValueError("cfg.project is required to sync area/iteration paths.")
@@ -94,14 +84,42 @@ def sync_ado_to_yaml(
         _dump_yaml({"area_paths": area_paths}, out_path / "paths_area.yaml")
         _dump_yaml({"iteration_paths": iteration_paths}, out_path / "paths_iteration.yaml")
 
+    if "teams" in requested:
+        if not cfg.project:
+            raise ValueError("cfg.project is required to sync teams.")
+
+        teams_url = join_url(cfg.org_url, cfg.project, "_apis", "teams")
+        teams = ado_get(cfg, teams_url).get("value", [])
+        normalized_teams = [
+            {
+                "id": t.get("id"),
+                "name": t.get("name"),
+                "description": t.get("description"),
+                "url": t.get("url"),
+                "identity_url": t.get("identityUrl"),
+            }
+            for t in teams
+            if isinstance(t, dict)
+        ]
+        _dump_yaml({"project": cfg.project, "teams": normalized_teams}, out_path / "teams.yaml")
+
     if "wit" in requested:
         if not cfg.project:
             raise ValueError("cfg.project is required to sync work item type fields.")
 
-        wit_names = wit_names or ["Feature", "User Story"]
+        if wit_names:
+            resolved_wit_names = list(wit_names)
+        else:
+            wit_list_url = join_url(cfg.org_url, cfg.project, "_apis", "wit", "workitemtypes")
+            wit_list = ado_get(cfg, wit_list_url).get("value", [])
+            resolved_wit_names = [
+                w.get("name") for w in wit_list if isinstance(w, dict) and isinstance(w.get("name"), str)
+            ]
+            resolved_wit_names.sort()
+
         wit_contract: Dict[str, Any] = {"schema_version": "1.0", "work_item_types": {}}
 
-        for wit in wit_names:
+        for wit in resolved_wit_names:
             fields_url = join_url(
                 cfg.org_url,
                 cfg.project,
@@ -137,5 +155,6 @@ def sync_ado_to_yaml(
         "project": cfg.project,
         "api_version": cfg.api_version,
         "sections": sorted(requested),
+        "wit_filter": list(wit_names or []),
     }
     _dump_yaml(sync_state, out_path / "_sync_state.yaml")
