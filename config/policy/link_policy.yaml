@@ -4,6 +4,7 @@ allowed_link_types:
   - parent-child
 max_depth: 2
 forbid_double_nesting:
+  - KeyResult
   - Feature
   - UserStory
 
