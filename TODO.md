@@ -16,6 +16,7 @@
   - `UserStory -> User Story` (or `Product Backlog Item`)
   - Validation uses `wit_map.yaml` to check existence and to drive writer endpoints.
 - [X] Current gap: `field_policy.yaml` is not yet wired into `adoctl contract export`, so updating it will not yet show up in `agent_contract.yaml` automatically. This is important so the user can modifiy the policy yml and the changes will propagate throughout the system. Here is the order of importance. (1) Anything **required** by `wit_contract.yaml` takes precedence over `field_policy.yaml`. For example, if a work item has a required field in wit contract and field does not list it as required, update the `field_policy.yaml` so that it matches wit contract. However, if wit_contract does not specify that a field is required, then field_policy can make this tighter by saying it is required. The backward modification is not required.
+- [X] Given the descriptions and context work item in `./docs`, update the yaml files in `./policy` to match what is specified in `./docs`. More explicitly, update `field_policy.yaml` based on the following specifications: `Blockers`, `Critical-Business-Decisions`, `Features`, `Iterations`, `Key-Results`, `Linking`, `Risks`, `User-Stories`, and `Work-Items` in `./docs`. 
 
 ## Implementation Plan (Phased Milestones)
 

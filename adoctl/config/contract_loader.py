@@ -39,12 +39,16 @@ class LinkPolicyConfig:
 class StandardsPolicyConfig:
     user_story_title_format: str
     required_tags: Tuple[str, ...]
+    work_item_standards: Dict[str, Dict[str, Any]]
 
 
 @dataclass(frozen=True)
 class FieldPolicyConfig:
     allowed_fields: Dict[str, Tuple[str, ...]]
     required_fields: Dict[str, Tuple[str, ...]]
+    export_work_item_types: Tuple[str, ...]
+    description_required_sections: Dict[str, Tuple[str, ...]]
+    description_optional_sections: Dict[str, Tuple[str, ...]]
 
 
 @dataclass(frozen=True)
@@ -83,8 +87,20 @@ class EffectiveContractConfig:
             )
         return mapping.reference_name
 
+    def agent_contract_export_types(self) -> Tuple[str, ...]:
+        if self.field_policy.export_work_item_types:
+            return self.field_policy.export_work_item_types
+        return tuple(sorted(self.wit_map.canonical_to_ado.keys()))
+
     def validate_mapping_coverage(self) -> List[str]:
         issues: List[str] = []
+        export_types = set(self.agent_contract_export_types())
+
+        for export_type in export_types:
+            if export_type not in self.wit_map.canonical_to_ado:
+                issues.append(
+                    f"field_policy agent_contract_export includes unknown canonical type '{export_type}'."
+                )
 
         for canonical_type, ado_wit in self.wit_map.canonical_to_ado.items():
             if ado_wit not in self.generated_wit_contract.work_item_types:
@@ -119,6 +135,8 @@ class EffectiveContractConfig:
         }
         for rule_name, type_to_fields in policy_type_rules.items():
             for canonical_type, field_keys in type_to_fields.items():
+                if canonical_type not in export_types:
+                    continue
                 if canonical_type not in self.wit_map.canonical_to_ado:
                     issues.append(
                         f"field_policy {rule_name} references unknown canonical type '{canonical_type}'."
@@ -277,17 +295,38 @@ def load_standards_policy(path: Optional[Path] = None) -> StandardsPolicyConfig:
     payload = _load_yaml_mapping(config_path)
     _require_schema_version(payload, config_path)
 
+    raw_work_item_standards = payload.get("work_item_standards", {})
+    if not isinstance(raw_work_item_standards, dict):
+        raise ValueError(f"work_item_standards must be a mapping in {config_path}")
+    work_item_standards: Dict[str, Dict[str, Any]] = {}
+    for canonical_type, value in raw_work_item_standards.items():
+        if not isinstance(canonical_type, str) or not canonical_type.strip():
+            raise ValueError(f"work_item_standards contains invalid canonical type key in {config_path}")
+        if not isinstance(value, dict):
+            raise ValueError(f"work_item_standards['{canonical_type}'] must be an object in {config_path}")
+        work_item_standards[canonical_type.strip()] = value
+
     format_value = payload.get("user_story_title_format")
     if not isinstance(format_value, str) or not format_value.strip():
-        raise ValueError(f"user_story_title_format must be a non-empty string in {config_path}")
+        derived_format = (
+            work_item_standards.get("UserStory", {})
+            .get("title", {})
+            .get("rule")
+        )
+        if not isinstance(derived_format, str) or not derived_format.strip():
+            raise ValueError(
+                f"user_story_title_format must be set, or derivable from work_item_standards.UserStory.title.rule in {config_path}"
+            )
+        format_value = derived_format
 
-    required_tags = payload.get("required_tags")
+    required_tags = payload.get("required_tags", [])
     if not isinstance(required_tags, list) or any(not isinstance(item, str) for item in required_tags):
         raise ValueError(f"required_tags must be a list[str] in {config_path}")
 
     return StandardsPolicyConfig(
         user_story_title_format=format_value.strip(),
         required_tags=tuple(required_tags),
+        work_item_standards=work_item_standards,
     )
 
 
@@ -315,6 +354,26 @@ def _parse_type_to_field_keys(payload: Dict[str, Any], key: str, config_path: Pa
     return parsed
 
 
+def _parse_export_work_item_types(payload: Dict[str, Any], config_path: Path) -> Tuple[str, ...]:
+    block = payload.get("agent_contract_export", {})
+    if block is None:
+        return tuple()
+    if not isinstance(block, dict):
+        raise ValueError(f"agent_contract_export must be a mapping in {config_path}")
+    raw_items = block.get("include_work_item_types", [])
+    if not isinstance(raw_items, list) or any(not isinstance(item, str) or not item.strip() for item in raw_items):
+        raise ValueError(f"agent_contract_export.include_work_item_types must be list[str] in {config_path}")
+    seen: Set[str] = set()
+    parsed: List[str] = []
+    for item in raw_items:
+        normalized = item.strip()
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        parsed.append(normalized)
+    return tuple(parsed)
+
+
 def load_field_policy(path: Optional[Path] = None) -> FieldPolicyConfig:
     config_path = path or (policy_config_dir() / "field_policy.yaml")
     payload = _load_yaml_mapping(config_path)
@@ -322,10 +381,16 @@ def load_field_policy(path: Optional[Path] = None) -> FieldPolicyConfig:
 
     allowed_fields = _parse_type_to_field_keys(payload, "allowed_fields", config_path)
     required_fields = _parse_type_to_field_keys(payload, "required_fields", config_path)
+    description_required_sections = _parse_type_to_field_keys(payload, "description_required_sections", config_path)
+    description_optional_sections = _parse_type_to_field_keys(payload, "description_optional_sections", config_path)
+    export_work_item_types = _parse_export_work_item_types(payload, config_path)
 
     return FieldPolicyConfig(
         allowed_fields=allowed_fields,
         required_fields=required_fields,
+        export_work_item_types=export_work_item_types,
+        description_required_sections=description_required_sections,
+        description_optional_sections=description_optional_sections,
     )
 
 
@@ -335,6 +400,9 @@ def save_field_policy(field_policy: FieldPolicyConfig, path: Optional[Path] = No
 
     payload = {
         "schema_version": "1.0",
+        "agent_contract_export": {
+            "include_work_item_types": list(field_policy.export_work_item_types),
+        },
         "allowed_fields": {
             canonical_type: sorted(list(field_keys))
             for canonical_type, field_keys in sorted(field_policy.allowed_fields.items(), key=lambda item: item[0])
@@ -342,6 +410,18 @@ def save_field_policy(field_policy: FieldPolicyConfig, path: Optional[Path] = No
         "required_fields": {
             canonical_type: sorted(list(field_keys))
             for canonical_type, field_keys in sorted(field_policy.required_fields.items(), key=lambda item: item[0])
+        },
+        "description_required_sections": {
+            canonical_type: sorted(list(field_keys))
+            for canonical_type, field_keys in sorted(
+                field_policy.description_required_sections.items(), key=lambda item: item[0]
+            )
+        },
+        "description_optional_sections": {
+            canonical_type: sorted(list(field_keys))
+            for canonical_type, field_keys in sorted(
+                field_policy.description_optional_sections.items(), key=lambda item: item[0]
+            )
         },
     }
 

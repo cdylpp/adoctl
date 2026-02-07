@@ -27,17 +27,13 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["local_id", "type", "title", "description", "acceptance_criteria", "tags", "relations"],
+        "required": ["local_id", "type", "title", "description", "acceptance_criteria", "relations"],
         "properties": {
           "local_id": { "type": "string" },
           "type": { "type": "string", "enum": ["Feature", "UserStory"] },
           "title": { "type": "string" },
           "description": { "type": "string" },
           "acceptance_criteria": {
-            "type": "array",
-            "items": { "type": "string" }
-          },
-          "tags": {
             "type": "array",
             "items": { "type": "string" }
           },
@@ -50,7 +46,7 @@
             "additionalProperties": false,
             "required": ["parent_local_id"],
             "properties": {
-              "parent_local_id": { "type": ["string", "null"] }
+              "parent_local_id": { "type": "string", "minLength": 1 }
             }
           }
         }
@@ -58,4 +54,3 @@
     }
   }
 }
-

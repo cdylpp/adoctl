@@ -18,6 +18,14 @@ from adoctl.config.paths import policy_config_dir
 from adoctl.util.fs import atomic_write_text, ensure_dir
 
 
+def _sorted_nested(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _sorted_nested(value[key]) for key in sorted(value.keys())}
+    if isinstance(value, list):
+        return [_sorted_nested(item) for item in value]
+    return value
+
+
 def _field_mapping_to_payload(mapping: FieldMapping) -> Dict[str, Any]:
     return {
         "canonical_key": mapping.canonical_key,
@@ -36,12 +44,16 @@ def _canonical_field_map(field_map: FieldMapConfig) -> Dict[str, str]:
 
 def _sync_field_policy_required_fields(config: EffectiveContractConfig, field_policy_path: Path) -> bool:
     generated_required = config.generated_required_fields_by_type()
+    export_types = set(config.agent_contract_export_types())
 
     merged_required: Dict[str, tuple[str, ...]] = {}
     changed = False
 
     all_types = set(config.field_policy.required_fields.keys()) | set(generated_required.keys())
     for canonical_type in sorted(all_types):
+        if canonical_type not in export_types:
+            merged_required[canonical_type] = tuple(sorted(set(config.field_policy.required_fields.get(canonical_type, ()))))
+            continue
         policy_required = set(config.field_policy.required_fields.get(canonical_type, ()))
         generated_required_set = set(generated_required.get(canonical_type, set()))
         merged = policy_required | generated_required_set
@@ -56,6 +68,9 @@ def _sync_field_policy_required_fields(config: EffectiveContractConfig, field_po
     updated_policy = FieldPolicyConfig(
         allowed_fields=config.field_policy.allowed_fields,
         required_fields=merged_required,
+        export_work_item_types=config.field_policy.export_work_item_types,
+        description_required_sections=config.field_policy.description_required_sections,
+        description_optional_sections=config.field_policy.description_optional_sections,
     )
     save_field_policy(updated_policy, path=field_policy_path)
     return True
@@ -64,7 +79,8 @@ def _sync_field_policy_required_fields(config: EffectiveContractConfig, field_po
 def build_agent_contract_snapshot(config: EffectiveContractConfig) -> Dict[str, Any]:
     coverage_issues = config.validate_mapping_coverage()
 
-    canonical_types_sorted = sorted(config.wit_map.canonical_to_ado.keys())
+    export_types = set(config.agent_contract_export_types())
+    canonical_types_sorted = sorted([t for t in config.wit_map.canonical_to_ado.keys() if t in export_types])
     canonical_fields_sorted = sorted(config.field_map.canonical_to_ado.keys())
 
     field_mappings = [
@@ -97,6 +113,11 @@ def build_agent_contract_snapshot(config: EffectiveContractConfig) -> Dict[str, 
             "standards": {
                 "user_story_title_format": config.standards.user_story_title_format,
                 "required_tags": list(config.standards.required_tags),
+                "work_item_standards": {
+                    canonical_type: _sorted_nested(standard)
+                    for canonical_type, standard in sorted(config.standards.work_item_standards.items(), key=lambda item: item[0])
+                    if canonical_type in export_types
+                },
             },
         },
         "mapping": {
@@ -108,23 +129,42 @@ def build_agent_contract_snapshot(config: EffectiveContractConfig) -> Dict[str, 
             "allowed_fields": {
                 canonical_type: sorted(list(field_keys))
                 for canonical_type, field_keys in sorted(config.field_policy.allowed_fields.items(), key=lambda item: item[0])
+                if canonical_type in export_types
             },
             "required_fields": {
                 canonical_type: sorted(list(field_keys))
                 for canonical_type, field_keys in sorted(config.field_policy.required_fields.items(), key=lambda item: item[0])
+                if canonical_type in export_types
+            },
+            "description_required_sections": {
+                canonical_type: sorted(list(field_keys))
+                for canonical_type, field_keys in sorted(
+                    config.field_policy.description_required_sections.items(), key=lambda item: item[0]
+                )
+                if canonical_type in export_types
+            },
+            "description_optional_sections": {
+                canonical_type: sorted(list(field_keys))
+                for canonical_type, field_keys in sorted(
+                    config.field_policy.description_optional_sections.items(), key=lambda item: item[0]
+                )
+                if canonical_type in export_types
             },
             "generated_required_fields": {
                 canonical_type: sorted(list(field_keys))
                 for canonical_type, field_keys in sorted(
                     config.generated_required_fields_by_type().items(), key=lambda item: item[0]
                 )
+                if canonical_type in export_types
             },
             "effective_required_fields": {
                 canonical_type: sorted(list(field_keys))
                 for canonical_type, field_keys in sorted(
                     config.effective_required_fields_by_type().items(), key=lambda item: item[0]
                 )
+                if canonical_type in export_types
             },
+            "export_work_item_types": sorted(list(export_types)),
         },
         "validation": {
             "mapping_coverage_issues": coverage_issues,

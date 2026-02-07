@@ -38,7 +38,7 @@ Layered configuration (do not mix responsibilities between layers).
 - `config/policy/` — team governance rules (human-authored).
   - `link_policy.yaml` — allowed link types and hierarchy rules.
   - `standards.yaml` — naming/tagging conventions.
-  - `field_policy.yaml` — allowed/required canonical fields by canonical type.
+  - `field_policy.yaml` — required/allowed canonical fields, agent export scope, and description section requirements.
   - `field_map.yaml` — canonical field key -> ADO reference name mapping.
   - `wit_map.yaml` — canonical work item type -> ADO work item type mapping.
   - `kr_taxonomy.yaml` — KR taxonomy used for tags/governance.
@@ -106,13 +106,35 @@ Bootstrap WIT contracts from extracted JSON:
 Export effective agent contract:
 
 - Run `python -m adoctl contract export --out config/generated/agent_contract.yaml`
-- This writes a single contract snapshot composed from:
+- This writes a single contract snapshot composed of:
   - policy mappings (`config/policy/wit_map.yaml`, `config/policy/field_map.yaml`)
   - field policy (`config/policy/field_policy.yaml`)
   - generated ADO metadata (`config/generated/wit_contract.yaml`)
 - Precedence rule:
   - any canonical field mapped to an ADO-required field in `wit_contract.yaml` is promoted into `field_policy.yaml.required_fields`.
   - `field_policy.yaml` can still be stricter by requiring additional canonical fields.
+- Policy controls:
+  - `agent_contract_export.include_work_item_types` controls which policy types are emitted into `agent_contract.yaml`.
+  - `description_required_sections` / `description_optional_sections` capture requirements that live inside `Description` (or discussion-style content), not standalone ADO fields.
+
+Lint contract consistency (offline):
+
+- Run `python -m adoctl contract lint --policy-dir config/policy --generated-dir config/generated`
+- Optional report file: `python -m adoctl contract lint --out config/generated/contract_lint.yaml`
+- Lint checks:
+  - policy field keys/types align with `field_map.yaml` and `wit_map.yaml`
+  - mapped ADO reference names exist in `config/generated/wit_contract.yaml`
+  - standards-required mapped fields exist in `field_policy.required_fields`
+  - non-export policy/standards types are reported as informational findings
+- Exit code:
+  - `0` when no errors
+  - `2` when errors are present
+
+Bootstrap policy metadata from team wiki docs (one-time seed):
+
+- Run `python -m adoctl policy bootstrap-from-docs --docs-dir docs --out config/policy/field_policy.yaml`
+- This adds `wiki_required_metadata`, `wiki_optional_metadata`, and `wiki_source_docs` sections to `field_policy.yaml`.
+- Runtime canonical policy keys (`allowed_fields`, `required_fields`) are preserved and remain the enforcement source.
 
 2) Validate outbox bundles (not implemented yet):
 

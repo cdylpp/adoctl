@@ -1,26 +1,73 @@
 schema_version: '1.0'
-generated_at_utc: '2026-02-07T03:49:00.815263+00:00'
+generated_at_utc: '2026-02-07T19:28:56.706359+00:00'
 canonical:
   supported_types:
   - Feature
   - UserStory
   field_mappings:
+  - canonical_key: acceptance_criteria
+    reference_name: Microsoft.VSTS.Common.AcceptanceCriteria
+    applies_to:
+    - UserStory
+    description: Specific requirements that define done for this user story.
+  - canonical_key: area_path
+    reference_name: System.AreaPath
+    applies_to:
+    - Feature
+    - UserStory
+    description: The area of the product with which this feature is associated.
+  - canonical_key: description
+    reference_name: System.Description
+    applies_to:
+    - Feature
+    - UserStory
+    description: Primary narrative body for the work item.
+  - canonical_key: iteration_path
+    reference_name: System.IterationPath
+    applies_to:
+    - Feature
+    - UserStory
+    description: Iteration path that plans the work item.
+  - canonical_key: owner
+    reference_name: System.AssignedTo
+    applies_to:
+    - Feature
+    - UserStory
+    description: Person currently accountable for the work item.
   - canonical_key: priority
     reference_name: Microsoft.VSTS.Common.Priority
     applies_to:
     - Feature
     - UserStory
-    description: Business priority ordering.
+    description: Business priority ordering. Integer value 1 - 5
   - canonical_key: risk
     reference_name: Microsoft.VSTS.Common.Risk
     applies_to:
     - Feature
     description: Risk classification for Feature work.
+  - canonical_key: state
+    reference_name: System.State
+    applies_to:
+    - Feature
+    - UserStory
+    description: Workflow state value.
   - canonical_key: story_points
     reference_name: Microsoft.VSTS.Scheduling.StoryPoints
     applies_to:
     - UserStory
-    description: Relative size estimate.
+    description: Relative size estimate. Use the fibonacci series 1 - 8.
+  - canonical_key: title
+    reference_name: System.Title
+    applies_to:
+    - Feature
+    - UserStory
+    description: Work item title. Clear, concise encapsulation of the work.
+  - canonical_key: value_area
+    reference_name: Microsoft.VSTS.Common.ValueArea
+    applies_to:
+    - Feature
+    - UserStory
+    description: Value area classification (Business or Architectural).
 rules:
   link_policy:
     allowed_link_types:
@@ -31,16 +78,93 @@ rules:
     - Feature
     - UserStory
   standards:
-    user_story_title_format: Clear, concise, action-oriented.
+    user_story_title_format: Clear, meaningful title containing the action to be completed.
     required_tags: []
+    work_item_standards:
+      Feature:
+        area_path:
+          preferred_format: Black Lagoon\[Team]\[FunctionalArea]\[ProductName]
+          rule: Set area path relative to the execution team. If the product is not
+            defined yet, then set it to default format.
+        definition_of_done:
+          required: true
+          rule: Definition of done must be explicit in description content.
+        dependencies:
+          code_format: dependency:N#
+          rule: Track dependencies in description using dependency code.
+        description:
+          template: As a <persona>, I need <capability>, so that <outcome>.
+        iteration_path:
+          preferred_format: Black Lagoon\[Team]
+          rule: If iteration is known, assign the specific iteration; otherwise assign
+            the team backlog iteration.
+        links:
+          constraints:
+          - Use parent-child hierarchy.
+          - Do not nest Feature under Feature.
+          required_parent_type: Key Result
+        planning_horizon:
+          maximum: 1 quarter
+          minimum: 2 sprints
+        release_plan:
+          allowed_values:
+          - NOW
+          - NEAR
+          - FAR
+          mapping:
+            FAR: Quarter month 3
+            NEAR: Quarter month 2
+            NOW: Quarter month 1
+          required: true
+        title:
+          rule: Concise, action-oriented title; keep simple and de-duplicate data.
+      UserStory:
+        acceptance_criteria:
+          format: (AC N). Given / When / Then
+          required: true
+          rule: Specific, testable definition of done.
+        description:
+          template: As a <persona>, I need <capability>, so that <outcome>.
+        links:
+          chain_requirement: Parent Feature should aggregate to a Key Result.
+          required_parent_type: Feature
+        owner:
+          required: true
+          rule: Assign an accountable individual.
+        story_points:
+          allowed_values:
+          - 1
+          - 2
+          - 3
+          - 5
+          - 8
+          guidance: Estimate complexity/effort, not time.
+          method: Fibonacci
+          required: true
+          t_shirt_map:
+            '1': small
+            '2': medium
+            '3': large
+            '5': XL
+            '8': XXL
+        title:
+          rule: Clear, meaningful title containing the action to be completed.
 mapping:
   wit_map:
     Feature: Feature
     UserStory: User Story
   field_map:
+    acceptance_criteria: Microsoft.VSTS.Common.AcceptanceCriteria
+    area_path: System.AreaPath
+    description: System.Description
+    iteration_path: System.IterationPath
+    owner: System.AssignedTo
     priority: Microsoft.VSTS.Common.Priority
     risk: Microsoft.VSTS.Common.Risk
+    state: System.State
     story_points: Microsoft.VSTS.Scheduling.StoryPoints
+    title: System.Title
+    value_area: Microsoft.VSTS.Common.ValueArea
 ado_capabilities:
   Feature:
     ado_work_item_type: Feature
@@ -195,20 +319,91 @@ ado_capabilities:
     - System.Title
 field_policy:
   allowed_fields:
-    Feature: []
-    UserStory: []
+    Feature:
+    - area_path
+    - description
+    - iteration_path
+    - owner
+    - priority
+    - risk
+    - state
+    - title
+    - value_area
+    UserStory:
+    - acceptance_criteria
+    - area_path
+    - description
+    - iteration_path
+    - owner
+    - priority
+    - state
+    - story_points
+    - title
+    - value_area
   required_fields:
     Feature:
+    - area_path
+    - description
+    - iteration_path
+    - owner
     - priority
+    - state
+    - title
+    - value_area
+    UserStory:
+    - acceptance_criteria
+    - area_path
+    - description
+    - iteration_path
+    - owner
+    - priority
+    - state
+    - story_points
+    - title
+    - value_area
+  description_required_sections:
+    Feature:
+    - definition of done
+    - dependencies
+    - release plan
+    UserStory: []
+  description_optional_sections:
+    Feature: []
     UserStory: []
   generated_required_fields:
     Feature:
     - priority
-    UserStory: []
+    - state
+    - title
+    - value_area
+    UserStory:
+    - state
+    - title
+    - value_area
   effective_required_fields:
     Feature:
+    - area_path
+    - description
+    - iteration_path
+    - owner
     - priority
-    UserStory: []
+    - state
+    - title
+    - value_area
+    UserStory:
+    - acceptance_criteria
+    - area_path
+    - description
+    - iteration_path
+    - owner
+    - priority
+    - state
+    - story_points
+    - title
+    - value_area
+  export_work_item_types:
+  - Feature
+  - UserStory
 validation:
   mapping_coverage_issues: []
   strict_ready: true

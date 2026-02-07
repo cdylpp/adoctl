@@ -1,5 +1,71 @@
 # Naming/tagging standards enforced by the CLI (not derived from ADO).
 schema_version: "1.0"
-user_story_title_format: "Clear, concise, action-oriented."
 required_tags: []
+work_item_standards:
+  Feature:
+    title:
+      rule: "Concise, action-oriented title; keep simple and de-duplicate data."
+    description:
+      template: "As a <persona>, I need <capability>, so that <outcome>."
+    area_path:
+      rule: "Set area path relative to the execution team. If the product is not defined yet, then set it to default format."
+      preferred_format: "Black Lagoon\\[Team]\\[FunctionalArea]\\[ProductName]"
+    iteration_path:
+      rule: "If iteration is known, assign the specific iteration; otherwise assign the team backlog iteration."
+      preferred_format: "Black Lagoon\\[Team]"
+    links:
+      required_parent_type: "Key Result"
+      constraints:
+        - "Use parent-child hierarchy."
+        - "Do not nest Feature under Feature."
+    dependencies:
+      rule: "Track dependencies in description using dependency code."
+      code_format: "dependency:N#"
+    definition_of_done:
+      required: true
+      rule: "Definition of done must be explicit in description content."
+    release_plan:
+      required: true
+      allowed_values:
+        - NOW
+        - NEAR
+        - FAR
+      mapping:
+        NOW: "Quarter month 1"
+        NEAR: "Quarter month 2"
+        FAR: "Quarter month 3"
+    planning_horizon:
+      minimum: "2 sprints"
+      maximum: "1 quarter"
 
+  UserStory:
+    title:
+      rule: "Clear, meaningful title containing the action to be completed."
+    description:
+      template: "As a <persona>, I need <capability>, so that <outcome>."
+    acceptance_criteria:
+      required: true
+      format: "(AC N). Given / When / Then"
+      rule: "Specific, testable definition of done."
+    story_points:
+      required: true
+      method: "Fibonacci"
+      allowed_values:
+        - 1
+        - 2
+        - 3
+        - 5
+        - 8
+      t_shirt_map:
+        "1": "small"
+        "2": "medium"
+        "3": "large"
+        "5": "XL"
+        "8": "XXL"
+      guidance: "Estimate complexity/effort, not time."
+    owner:
+      required: true
+      rule: "Assign an accountable individual."
+    links:
+      required_parent_type: "Feature"
+      chain_requirement: "Parent Feature should aggregate to a Key Result."

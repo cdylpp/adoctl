@@ -9,7 +9,9 @@ from typing import List, Optional
 from adoctl.ado_client.models import ADOConfig
 from adoctl.cli.home import run_home_screen_loop
 from adoctl.config.contract_export import export_agent_contract
+from adoctl.config.contract_lint import lint_contract
 from adoctl.config.context import CLIContext, load_cli_context, save_cli_context
+from adoctl.config.wiki_policy_bootstrap import bootstrap_field_policy_from_docs
 from adoctl.sync.ado_sync import sync_ado_to_yaml
 from adoctl.sync.wit_bootstrap import bootstrap_wit_contracts_from_extract
 
@@ -101,6 +103,42 @@ def _build_parser() -> argparse.ArgumentParser:
         "--generated-dir",
         default="config/generated",
         help="Generated config directory",
+    )
+    contract_lint = contract_sub.add_parser(
+        "lint",
+        help="Lint field policy, standards, field map, and generated metadata consistency",
+    )
+    contract_lint.add_argument(
+        "--policy-dir",
+        default="config/policy",
+        help="Policy config directory",
+    )
+    contract_lint.add_argument(
+        "--generated-dir",
+        default="config/generated",
+        help="Generated config directory",
+    )
+    contract_lint.add_argument(
+        "--out",
+        default=None,
+        help="Optional output path for lint report YAML",
+    )
+
+    policy = subparsers.add_parser("policy", help="Policy commands")
+    policy_sub = policy.add_subparsers(dest="policy_cmd", required=True)
+    policy_bootstrap = policy_sub.add_parser(
+        "bootstrap-from-docs",
+        help="One-time bootstrap of field policy wiki metadata from docs/*.md",
+    )
+    policy_bootstrap.add_argument(
+        "--docs-dir",
+        default="docs",
+        help="Directory containing team wiki markdown files",
+    )
+    policy_bootstrap.add_argument(
+        "--out",
+        default="config/policy/field_policy.yaml",
+        help="Field policy YAML output path",
     )
 
     outbox = subparsers.add_parser("outbox", help="Outbox commands")
@@ -217,6 +255,35 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"Mapping coverage status: {strict_status}")
         if result.get("field_policy_updated"):
             print("field_policy.yaml was updated with generated required fields.")
+        return 0
+
+    if args.command == "contract" and args.contract_cmd == "lint":
+        report = lint_contract(
+            policy_dir=Path(args.policy_dir),
+            generated_dir=Path(args.generated_dir),
+            out_path=args.out,
+        )
+        summary = report["summary"]
+        status = "ready" if report["strict_ready"] else "not ready"
+        print(f"Contract lint status: {status}")
+        print(f"Errors: {summary['errors']}  Warnings: {summary['warnings']}  Info: {summary['info']}")
+        for finding in report["findings"]:
+            print(
+                f"[{finding['severity']}] {finding['code']} {finding['path']}: "
+                f"{finding['message']} Suggestion: {finding['suggestion']}"
+            )
+        if "output_path" in report:
+            print(f"Lint report: {report['output_path']}")
+        return 0 if report["strict_ready"] else 2
+
+    if args.command == "policy" and args.policy_cmd == "bootstrap-from-docs":
+        result = bootstrap_field_policy_from_docs(
+            docs_dir=args.docs_dir,
+            out_path=args.out,
+        )
+        print(f"Field policy bootstrapped: {result['output_path']}")
+        print(f"Docs processed: {result['source_count']}")
+        print(f"WIT metadata captured: {result['work_item_count']}")
         return 0
 
     if args.command == "outbox" and args.outbox_cmd == "validate":

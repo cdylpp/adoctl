@@ -1,8 +1,62 @@
-schema_version: '1.0'
+schema_version: "1.0"
+
+agent_contract_export:
+  include_work_item_types:
+    - Feature
+    - UserStory
+
 allowed_fields:
-  Feature: []
-  UserStory: []
+  Feature:
+    - area_path
+    - description
+    - iteration_path
+    - owner
+    - priority
+    - risk
+    - state
+    - title
+    - value_area
+  UserStory:
+    - acceptance_criteria
+    - area_path
+    - description
+    - iteration_path
+    - owner
+    - priority
+    - state
+    - story_points
+    - title
+    - value_area
+
 required_fields:
   Feature:
-  - priority
+    - area_path
+    - description
+    - iteration_path
+    - owner
+    - priority
+    - state
+    - title
+    - value_area
+  UserStory:
+    - acceptance_criteria
+    - area_path
+    - description
+    - iteration_path
+    - owner
+    - priority
+    - state
+    - story_points
+    - title
+    - value_area
+
+description_required_sections:
+  Feature:
+    - dependencies
+    - definition of done
+    - release plan
+  UserStory: []
+
+description_optional_sections:
+  Feature: []
   UserStory: []

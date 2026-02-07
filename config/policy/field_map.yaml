@@ -2,19 +2,66 @@ schema_version: "1.0"
 
 # Maps canonical bundle fields.* keys -> ADO reference fields.
 canonical_to_ado:
+  title:
+    reference_name: System.Title
+    applies_to:
+      - Feature
+      - UserStory
+    description: Work item title. Clear, concise encapsulation of the work.
+  state:
+    reference_name: System.State
+    applies_to:
+      - Feature
+      - UserStory
+    description: Workflow state value.
   story_points:
-    reference_name: "Microsoft.VSTS.Scheduling.StoryPoints"
+    reference_name: Microsoft.VSTS.Scheduling.StoryPoints
     applies_to:
       - UserStory
-    description: "Relative size estimate."
+    description: Relative size estimate. Use the fibonacci series 1 - 8.
   priority:
-    reference_name: "Microsoft.VSTS.Common.Priority"
+    reference_name: Microsoft.VSTS.Common.Priority
     applies_to:
       - Feature
       - UserStory
-    description: "Business priority ordering."
-  risk:
-    reference_name: "Microsoft.VSTS.Common.Risk"
+    description: Business priority ordering. Integer value 1 - 5
+  value_area:
+    reference_name: Microsoft.VSTS.Common.ValueArea
     applies_to:
       - Feature
-    description: "Risk classification for Feature work."
+      - UserStory
+    description: Value area classification (Business or Architectural).
+  description: 
+    reference_name: System.Description
+    applies_to:
+      - Feature
+      - UserStory
+    description: Primary narrative body for the work item.
+  area_path: 
+    reference_name: System.AreaPath
+    applies_to:
+      - Feature
+      - UserStory
+    description: The area of the product with which this feature is associated.
+  iteration_path: 
+    reference_name: System.IterationPath
+    applies_to:
+      - Feature
+      - UserStory
+    description: Iteration path that plans the work item.
+  owner:
+    reference_name: System.AssignedTo
+    applies_to:
+      - Feature
+      - UserStory
+    description: Person currently accountable for the work item.
+  risk:
+    reference_name: Microsoft.VSTS.Common.Risk
+    applies_to:
+      - Feature
+    description: Risk classification for Feature work.
+  acceptance_criteria:
+    reference_name: Microsoft.VSTS.Common.AcceptanceCriteria
+    applies_to:
+      - UserStory
+    description: Specific requirements that define done for this user story.

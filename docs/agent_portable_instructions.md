@@ -61,7 +61,7 @@ Output must be JSON only and must follow the canonical bundle schema:
 - All `work_items[].type` values are supported canonical types.
 - Parent links only use local IDs that exist in the same bundle.
 - No unknown canonical fields are present.
-- Every item has tags required by the current policy.
+- Every item includes only canonical keys and field keys allowed by the current contract.
 
 ## Strict Failure Behavior
 

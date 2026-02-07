@@ -24,13 +24,12 @@
         "Given a malformed bundle, when validation runs, then schema errors are reported with exact offending fields.",
         "Given a valid bundle, when validation runs, then it is eligible for write planning without policy violations."
       ],
-      "tags": ["KR-2", "adoctl", "validation", "bundle:2026-02-07_kr2_sprint03"],
       "fields": {
         "priority": 2,
         "risk": "2 - Medium"
       },
       "relations": {
-        "parent_local_id": null
+        "parent_local_id": "EPIC-001"
       }
     },
     {
@@ -42,7 +41,6 @@
         "Given duplicate local IDs, when validation runs, then the bundle fails with duplicate ID details.",
         "Given unsupported canonical fields, when validation runs, then the report identifies each unknown field key."
       ],
-      "tags": ["KR-2", "adoctl", "validation", "bundle:2026-02-07_kr2_sprint03"],
       "fields": {
         "story_points": 5,
         "priority": 2

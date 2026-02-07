@@ -99,7 +99,7 @@ Key principle:
 
 - One JSON file per request (“bundle”).
 - Contains: schema_version, bundle_id, context, work_items[]
-- Work items use canonical keys: type, title, description, acceptance_criteria, tags, fields, relations.parent_local_id
+- Work items use canonical keys: type, title, description, acceptance_criteria, fields, relations.parent_local_id
 - Only relationship supported in bundle: parent_local_id
 
 Outbox layout:
