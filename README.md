@@ -52,6 +52,45 @@ Layered configuration (do not mix responsibilities between layers).
 - `config/local/` — local operator context for CLI UX.
   - `context.yaml` — selected org/project/team/current iteration used by the home screen and defaults.
 
+## Configuration Lineage and Ownership
+
+Edit policy and local context; do not hand-edit generated artifacts.
+
+- Safe to edit (user-managed):
+  - `config/policy/wit_map.yaml`
+  - `config/policy/field_map.yaml`
+  - `config/policy/field_policy.yaml`
+  - `config/policy/link_policy.yaml`
+  - `config/policy/standards.yaml`
+  - `config/policy/kr_taxonomy.yaml`
+  - `config/local/context.yaml` (optional; CLI may overwrite)
+- Do not edit (machine-generated):
+  - `config/generated/wit_contract.yaml`
+  - `config/generated/wit_contracts/*.yaml`
+  - `config/generated/_sync_state.yaml`
+  - `config/generated/agent_contract.yaml`
+  - `config/generated/contract_lint.yaml` (when emitted)
+
+Each config file now includes top-of-file comments declaring whether it is user-managed or machine-generated.
+
+Simple lineage:
+
+```text
+ADO metadata (sync/bootstrap) -----> config/generated/wit_contract*.yaml
+                                      |
+User policy edits ----------------> config/policy/*.yaml
+                                      |
+                                      v
+                             adoctl contract export
+                                      |
+                                      v
+                         config/generated/agent_contract.yaml
+                                      |
+                      Agent canonical bundle JSON output
+                                      |
+                     Must satisfy schema + exported contract
+```
+
 ### `schema/`
 
 Machine-readable contracts.

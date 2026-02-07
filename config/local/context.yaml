@@ -1,3 +1,5 @@
+# LOCAL CLI CONTEXT. SAFE TO EDIT.
+# This file stores local operator defaults and may be overwritten by `adoctl context set` or `adoctl home`.
 schema_version: '1.0'
 org_url: https://some.special.org/PMW
 project: White Hot

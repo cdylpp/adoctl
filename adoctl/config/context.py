@@ -8,6 +8,7 @@ import yaml
 
 from adoctl.config.paths import cli_context_path
 from adoctl.util.fs import atomic_write_text, ensure_dir
+from adoctl.util.yaml_emit import render_yaml_with_header
 
 
 @dataclass(frozen=True)
@@ -58,5 +59,11 @@ def save_cli_context(context: CLIContext, path: Optional[Path] = None) -> None:
     }
     atomic_write_text(
         context_path,
-        yaml.safe_dump(payload, sort_keys=False, allow_unicode=True),
+        render_yaml_with_header(
+            payload,
+            [
+                "LOCAL CLI CONTEXT. SAFE TO EDIT.",
+                "This file stores operator defaults for convenience and may be overwritten by `adoctl context set` or `adoctl home`.",
+            ],
+        ),
     )

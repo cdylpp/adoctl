@@ -1,4 +1,5 @@
+# USER-MANAGED POLICY FILE. SAFE TO EDIT.
+# Purpose: optional KR taxonomy for planning/governance metadata.
 # Key Result taxonomy used for tagging/governance.
 schema_version: "1.0"
 krs: []
-

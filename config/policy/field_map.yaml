@@ -1,3 +1,6 @@
+# USER-MANAGED POLICY FILE. SAFE TO EDIT.
+# Purpose: map canonical field keys to ADO reference field names.
+# Keep this aligned with config/generated/wit_contract.yaml and field_policy requirements.
 schema_version: "1.0"
 
 # Maps canonical bundle fields.* keys -> ADO reference fields.

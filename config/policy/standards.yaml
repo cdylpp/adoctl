@@ -1,3 +1,5 @@
+# USER-MANAGED POLICY FILE. SAFE TO EDIT.
+# Purpose: define semantic writing standards used by agents and contract linting.
 # Naming/tagging standards enforced by the CLI (not derived from ADO).
 schema_version: "1.0"
 required_tags: []

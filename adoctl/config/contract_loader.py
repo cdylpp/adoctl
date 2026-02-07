@@ -8,6 +8,7 @@ import yaml
 
 from adoctl.config.paths import generated_config_dir, policy_config_dir
 from adoctl.util.fs import atomic_write_text, ensure_dir
+from adoctl.util.yaml_emit import render_yaml_with_header
 
 
 @dataclass(frozen=True)
@@ -427,7 +428,14 @@ def save_field_policy(field_policy: FieldPolicyConfig, path: Optional[Path] = No
 
     atomic_write_text(
         config_path,
-        yaml.safe_dump(payload, sort_keys=False, allow_unicode=True),
+        render_yaml_with_header(
+            payload,
+            [
+                "USER-MANAGED POLICY FILE. SAFE TO EDIT.",
+                "Defines canonical field requirements and export scope for agent contract generation.",
+                "Some required_fields may be auto-promoted by `adoctl contract export` based on ADO-required fields.",
+            ],
+        ),
     )
     return config_path
 

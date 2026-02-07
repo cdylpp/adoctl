@@ -1,3 +1,6 @@
+# USER-MANAGED POLICY FILE. SAFE TO EDIT.
+# Purpose: map canonical bundle work item types to ADO work item type names.
+# Changes here propagate through `adoctl contract export` into config/generated/agent_contract.yaml.
 schema_version: "1.0"
 
 # Maps canonical bundle type -> ADO work item type name.

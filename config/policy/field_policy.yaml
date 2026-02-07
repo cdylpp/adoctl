@@ -1,3 +1,6 @@
+# USER-MANAGED POLICY FILE. SAFE TO EDIT.
+# Purpose: define allowed/required canonical fields and export scope for agent contracts.
+# Note: `adoctl contract export` may auto-promote generated ADO-required fields into `required_fields`.
 schema_version: "1.0"
 
 agent_contract_export:

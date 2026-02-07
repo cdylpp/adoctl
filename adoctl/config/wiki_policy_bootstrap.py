@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Tuple
 import yaml
 
 from adoctl.util.fs import atomic_write_text, ensure_dir
+from adoctl.util.yaml_emit import render_yaml_with_header
 
 
 _DOC_WIT_MAP = {
@@ -152,7 +153,14 @@ def bootstrap_field_policy_from_docs(
     ensure_dir(output_path.parent)
     atomic_write_text(
         output_path,
-        yaml.safe_dump(payload, sort_keys=False, allow_unicode=True),
+        render_yaml_with_header(
+            payload,
+            [
+                "USER-MANAGED POLICY FILE. SAFE TO EDIT.",
+                "wiki_* sections are machine-bootstrapped snapshots from docs and can be re-generated.",
+                "allowed_fields / required_fields remain the runtime canonical policy.",
+            ],
+        ),
     )
 
     return {
