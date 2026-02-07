@@ -3,12 +3,15 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from pathlib import Path
 from typing import List, Optional
 
 from adoctl.ado_client.models import ADOConfig
 from adoctl.cli.home import run_home_screen_loop
+from adoctl.config.contract_export import export_agent_contract
 from adoctl.config.context import CLIContext, load_cli_context, save_cli_context
 from adoctl.sync.ado_sync import sync_ado_to_yaml
+from adoctl.sync.wit_bootstrap import bootstrap_wit_contracts_from_extract
 
 
 def _add_global_args(parser: argparse.ArgumentParser) -> None:
@@ -65,6 +68,40 @@ def _build_parser() -> argparse.ArgumentParser:
     context_set.add_argument("--project", help="ADO project name")
     context_set.add_argument("--team", help="Team name")
     context_set.add_argument("--current-iteration", help="Current iteration path")
+
+    bootstrap = subparsers.add_parser(
+        "bootstrap-wit-contracts",
+        help="Initialize WIT contract YAML files from a local extracted JSON payload",
+    )
+    bootstrap.add_argument(
+        "--input",
+        default="data.json",
+        help="Path to extracted WIT JSON payload (default: data.json)",
+    )
+    bootstrap.add_argument(
+        "--out-dir",
+        default="config/generated",
+        help="Output directory for generated contract YAML files",
+    )
+
+    contract = subparsers.add_parser("contract", help="Contract commands")
+    contract_sub = contract.add_subparsers(dest="contract_cmd", required=True)
+    contract_export = contract_sub.add_parser("export", help="Export effective agent contract snapshot")
+    contract_export.add_argument(
+        "--out",
+        default="config/generated/agent_contract.yaml",
+        help="Output path for exported contract snapshot",
+    )
+    contract_export.add_argument(
+        "--policy-dir",
+        default="config/policy",
+        help="Policy config directory",
+    )
+    contract_export.add_argument(
+        "--generated-dir",
+        default="config/generated",
+        help="Generated config directory",
+    )
 
     outbox = subparsers.add_parser("outbox", help="Outbox commands")
     outbox_sub = outbox.add_subparsers(dest="outbox_cmd", required=True)
@@ -161,6 +198,25 @@ def main(argv: Optional[List[str]] = None) -> int:
                 current_iteration=args.current_iteration,
             )
         )
+        return 0
+
+    if args.command == "bootstrap-wit-contracts":
+        result = bootstrap_wit_contracts_from_extract(input_json=args.input, out_dir=args.out_dir)
+        print(f"Created {result['work_item_type_count']} WIT contract files in {result['contracts_dir']}")
+        print(f"Aggregate contract: {result['aggregate_path']}")
+        return 0
+
+    if args.command == "contract" and args.contract_cmd == "export":
+        result = export_agent_contract(
+            out_path=args.out,
+            policy_dir=Path(args.policy_dir),
+            generated_dir=Path(args.generated_dir),
+        )
+        strict_status = "ready" if result["strict_ready"] else "not ready"
+        print(f"Contract exported: {result['output_path']}")
+        print(f"Mapping coverage status: {strict_status}")
+        if result.get("field_policy_updated"):
+            print("field_policy.yaml was updated with generated required fields.")
         return 0
 
     if args.command == "outbox" and args.outbox_cmd == "validate":

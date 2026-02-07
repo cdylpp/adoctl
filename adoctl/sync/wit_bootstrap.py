@@ -1,0 +1,149 @@
+from __future__ import annotations
+
+import datetime as dt
+import json
+import re
+from pathlib import Path
+from typing import Any, Dict, List
+
+import yaml
+
+from adoctl.util.fs import atomic_write_text, ensure_dir
+
+
+def _load_extract_payload(path: Path) -> Dict[str, Any]:
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(raw, str):
+        raw = json.loads(raw)
+    if not isinstance(raw, dict):
+        raise ValueError("Extract JSON must decode to an object.")
+    value = raw.get("value")
+    if not isinstance(value, list):
+        raise ValueError("Extract JSON must contain a top-level 'value' array.")
+    return raw
+
+
+def _slugify_filename(name: str) -> str:
+    slug = re.sub(r"[^A-Za-z0-9]+", "_", name.strip().lower()).strip("_")
+    return slug or "work_item_type"
+
+
+def _normalize_state(state: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "name": state.get("name"),
+        "category": state.get("category"),
+        "color": state.get("color"),
+    }
+
+
+def _as_bool(value: Any) -> bool:
+    return bool(value) if isinstance(value, bool) else False
+
+
+def _normalize_field(field: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "name": field.get("name"),
+        "reference_name": field.get("referenceName"),
+        "type": field.get("type"),
+        "read_only": _as_bool(field.get("readOnly")),
+        "required": _as_bool(field.get("alwaysRequired")) or _as_bool(field.get("required")),
+        "default_value": field.get("defaultValue"),
+        "help_text": field.get("helpText"),
+    }
+
+
+def _get_field_source(item: Dict[str, Any]) -> List[Dict[str, Any]]:
+    fields = item.get("fieldInstances")
+    if isinstance(fields, list):
+        return [f for f in fields if isinstance(f, dict)]
+
+    fields = item.get("fields")
+    if isinstance(fields, list):
+        return [f for f in fields if isinstance(f, dict)]
+    return []
+
+
+def _dump_yaml(path: Path, payload: Dict[str, Any]) -> None:
+    ensure_dir(path.parent)
+    atomic_write_text(path, yaml.safe_dump(payload, sort_keys=False, allow_unicode=True))
+
+
+def bootstrap_wit_contracts_from_extract(input_json: str, out_dir: str = "config/generated") -> Dict[str, Any]:
+    input_path = Path(input_json)
+    if not input_path.exists():
+        raise FileNotFoundError(f"Extract file not found: {input_json}")
+
+    extract = _load_extract_payload(input_path)
+    work_items = extract.get("value", [])
+    now = dt.datetime.now(dt.timezone.utc).isoformat()
+    out_path = Path(out_dir)
+    per_wit_dir = out_path / "wit_contracts"
+
+    work_item_types: Dict[str, Dict[str, Any]] = {}
+    written_files: List[str] = []
+
+    for item in sorted((w for w in work_items if isinstance(w, dict)), key=lambda w: str(w.get("name", ""))):
+        name = item.get("name")
+        if not isinstance(name, str) or not name.strip():
+            continue
+        name = name.strip()
+
+        states = []
+        for state in item.get("states", []):
+            if isinstance(state, dict):
+                states.append(_normalize_state(state))
+
+        fields = [_normalize_field(f) for f in _get_field_source(item)]
+        fields.sort(key=lambda f: (str(f.get("reference_name") or ""), str(f.get("name") or "")))
+
+        wit_payload = {
+            "reference_name": item.get("referenceName"),
+            "description": item.get("description"),
+            "is_disabled": _as_bool(item.get("isDisabled")),
+            "states": states,
+            "fields": fields,
+        }
+        work_item_types[name] = wit_payload
+
+        per_wit_payload = {
+            "schema_version": "1.0",
+            "generated_at_utc": now,
+            "source": {
+                "method": "extract_json_bootstrap",
+                "input_file": str(input_path),
+            },
+            "work_item_type": {"name": name, **wit_payload},
+        }
+        per_wit_file = per_wit_dir / f"{_slugify_filename(name)}.yaml"
+        _dump_yaml(per_wit_file, per_wit_payload)
+        written_files.append(str(per_wit_file))
+
+    aggregate_payload = {
+        "schema_version": "1.0",
+        "generated_at_utc": now,
+        "source": {
+            "method": "extract_json_bootstrap",
+            "input_file": str(input_path),
+            "count": extract.get("count"),
+        },
+        "work_item_types": work_item_types,
+    }
+    aggregate_path = out_path / "wit_contract.yaml"
+    _dump_yaml(aggregate_path, aggregate_payload)
+
+    sync_state_payload = {
+        "schema_version": "1.0",
+        "synced_at_utc": now,
+        "sections": ["wit"],
+        "source": "extract_json_bootstrap",
+        "input_file": str(input_path),
+        "wit_count": len(work_item_types),
+    }
+    _dump_yaml(out_path / "_sync_state.yaml", sync_state_payload)
+
+    return {
+        "aggregate_path": str(aggregate_path),
+        "contracts_dir": str(per_wit_dir),
+        "work_item_type_count": len(work_item_types),
+        "written_contracts": written_files,
+    }

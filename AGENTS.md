@@ -1,11 +1,9 @@
 # AGENT.md — ADO Decomposition Outbox + Writer CLI
 
 Project Root: `/Users/codylepp/Development/ado cli/adoctl`
-Current Tasking: `./TODO.md`
+Current Tasking: `./TODO.md` under AGENTS Tasking.
   When completed with a task: check the box to ensure it is tracked i.e.,  - [X] 
 Specifications: `./specs.md`
-
-
 
 
 ## Purpose (Why this project exists)

@@ -1,0 +1,6 @@
+schema_version: "1.0"
+
+# Maps canonical bundle type -> ADO work item type name.
+canonical_to_ado:
+  Feature: "Feature"
+  UserStory: "User Story"

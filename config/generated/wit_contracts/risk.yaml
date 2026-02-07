@@ -1,0 +1,408 @@
+schema_version: '1.0'
+generated_at_utc: '2026-02-06T23:14:16.861408+00:00'
+source:
+  method: extract_json_bootstrap
+  input_file: data.json
+work_item_type:
+  name: Risk
+  reference_name: BlackLagoon.Risk
+  description: A risk is any identified uncertainty that could negatively impact delivery
+    timelines, product quality, stakeholder alignment, or resource availability if
+    not actively monitored or mitigated.
+  is_disabled: false
+  states:
+  - name: New
+    category: Proposed
+    color: b2b2b2
+  - name: Active
+    category: InProgress
+    color: 007acc
+  - name: Closed
+    category: Completed
+    color: '339933'
+  fields:
+  - name: Next Review Date
+    reference_name: Custom.NextReviewDate
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Risk Status
+    reference_name: Custom.RiskStatus
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Risk Summary
+    reference_name: Custom.RiskSummary
+    type: null
+    read_only: false
+    required: true
+    default_value: null
+    help_text: null
+  - name: Closed By
+    reference_name: Microsoft.VSTS.Common.ClosedBy
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Closed Date
+    reference_name: Microsoft.VSTS.Common.ClosedDate
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Stack Rank
+    reference_name: Microsoft.VSTS.Common.StackRank
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: State Change Date
+    reference_name: Microsoft.VSTS.Common.StateChangeDate
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Area ID
+    reference_name: System.AreaId
+    type: null
+    read_only: false
+    required: true
+    default_value: null
+    help_text: null
+  - name: Area Level 1
+    reference_name: System.AreaLevel1
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Area Level 2
+    reference_name: System.AreaLevel2
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Area Level 3
+    reference_name: System.AreaLevel3
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Area Level 4
+    reference_name: System.AreaLevel4
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Area Level 5
+    reference_name: System.AreaLevel5
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Area Level 6
+    reference_name: System.AreaLevel6
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Area Level 7
+    reference_name: System.AreaLevel7
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Area Path
+    reference_name: System.AreaPath
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Assigned To
+    reference_name: System.AssignedTo
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Attached File Count
+    reference_name: System.AttachedFileCount
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Authorized As
+    reference_name: System.AuthorizedAs
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Authorized Date
+    reference_name: System.AuthorizedDate
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Board Column
+    reference_name: System.BoardColumn
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Board Column Done
+    reference_name: System.BoardColumnDone
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Board Lane
+    reference_name: System.BoardLane
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Changed By
+    reference_name: System.ChangedBy
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Changed Date
+    reference_name: System.ChangedDate
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Comment Count
+    reference_name: System.CommentCount
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Created By
+    reference_name: System.CreatedBy
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Created Date
+    reference_name: System.CreatedDate
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Description
+    reference_name: System.Description
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: External Link Count
+    reference_name: System.ExternalLinkCount
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: History
+    reference_name: System.History
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Hyperlink Count
+    reference_name: System.HyperLinkCount
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: ID
+    reference_name: System.Id
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Iteration ID
+    reference_name: System.IterationId
+    type: null
+    read_only: false
+    required: true
+    default_value: null
+    help_text: null
+  - name: Iteration Level 1
+    reference_name: System.IterationLevel1
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Iteration Level 2
+    reference_name: System.IterationLevel2
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Iteration Level 3
+    reference_name: System.IterationLevel3
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Iteration Level 4
+    reference_name: System.IterationLevel4
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Iteration Level 5
+    reference_name: System.IterationLevel5
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Iteration Level 6
+    reference_name: System.IterationLevel6
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Iteration Level 7
+    reference_name: System.IterationLevel7
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Iteration Path
+    reference_name: System.IterationPath
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Node Name
+    reference_name: System.NodeName
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Parent
+    reference_name: System.Parent
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Reason
+    reference_name: System.Reason
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Related Link Count
+    reference_name: System.RelatedLinkCount
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Remote Link Count
+    reference_name: System.RemoteLinkCount
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Rev
+    reference_name: System.Rev
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Revised Date
+    reference_name: System.RevisedDate
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: State
+    reference_name: System.State
+    type: null
+    read_only: false
+    required: true
+    default_value: New
+    help_text: null
+  - name: Tags
+    reference_name: System.Tags
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Team Project
+    reference_name: System.TeamProject
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Title
+    reference_name: System.Title
+    type: null
+    read_only: false
+    required: true
+    default_value: null
+    help_text: null
+  - name: Watermark
+    reference_name: System.Watermark
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null
+  - name: Work Item Type
+    reference_name: System.WorkItemType
+    type: null
+    read_only: false
+    required: false
+    default_value: null
+    help_text: null

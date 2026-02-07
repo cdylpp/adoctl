@@ -1,0 +1,214 @@
+schema_version: '1.0'
+generated_at_utc: '2026-02-07T03:49:00.815263+00:00'
+canonical:
+  supported_types:
+  - Feature
+  - UserStory
+  field_mappings:
+  - canonical_key: priority
+    reference_name: Microsoft.VSTS.Common.Priority
+    applies_to:
+    - Feature
+    - UserStory
+    description: Business priority ordering.
+  - canonical_key: risk
+    reference_name: Microsoft.VSTS.Common.Risk
+    applies_to:
+    - Feature
+    description: Risk classification for Feature work.
+  - canonical_key: story_points
+    reference_name: Microsoft.VSTS.Scheduling.StoryPoints
+    applies_to:
+    - UserStory
+    description: Relative size estimate.
+rules:
+  link_policy:
+    allowed_link_types:
+    - parent-child
+    max_depth: 2
+    forbid_double_nesting:
+    - KeyResult
+    - Feature
+    - UserStory
+  standards:
+    user_story_title_format: Clear, concise, action-oriented.
+    required_tags: []
+mapping:
+  wit_map:
+    Feature: Feature
+    UserStory: User Story
+  field_map:
+    priority: Microsoft.VSTS.Common.Priority
+    risk: Microsoft.VSTS.Common.Risk
+    story_points: Microsoft.VSTS.Scheduling.StoryPoints
+ado_capabilities:
+  Feature:
+    ado_work_item_type: Feature
+    available_fields:
+    - Microsoft.VSTS.Build.IntegrationBuild
+    - Microsoft.VSTS.Common.ActivatedBy
+    - Microsoft.VSTS.Common.ActivatedDate
+    - Microsoft.VSTS.Common.BusinessValue
+    - Microsoft.VSTS.Common.ClosedBy
+    - Microsoft.VSTS.Common.ClosedDate
+    - Microsoft.VSTS.Common.Priority
+    - Microsoft.VSTS.Common.ResolvedBy
+    - Microsoft.VSTS.Common.ResolvedDate
+    - Microsoft.VSTS.Common.ResolvedReason
+    - Microsoft.VSTS.Common.Risk
+    - Microsoft.VSTS.Common.StackRank
+    - Microsoft.VSTS.Common.StateChangeDate
+    - Microsoft.VSTS.Common.TimeCriticality
+    - Microsoft.VSTS.Common.ValueArea
+    - Microsoft.VSTS.Scheduling.Effort
+    - Microsoft.VSTS.Scheduling.StartDate
+    - Microsoft.VSTS.Scheduling.TargetDate
+    - System.AreaId
+    - System.AreaLevel1
+    - System.AreaLevel2
+    - System.AreaLevel3
+    - System.AreaLevel4
+    - System.AreaLevel5
+    - System.AreaLevel6
+    - System.AreaLevel7
+    - System.AreaPath
+    - System.AssignedTo
+    - System.AttachedFileCount
+    - System.AuthorizedAs
+    - System.AuthorizedDate
+    - System.BoardColumn
+    - System.BoardColumnDone
+    - System.BoardLane
+    - System.ChangedBy
+    - System.ChangedDate
+    - System.CommentCount
+    - System.CreatedBy
+    - System.CreatedDate
+    - System.Description
+    - System.ExternalLinkCount
+    - System.History
+    - System.HyperLinkCount
+    - System.Id
+    - System.IterationId
+    - System.IterationLevel1
+    - System.IterationLevel2
+    - System.IterationLevel3
+    - System.IterationLevel4
+    - System.IterationLevel5
+    - System.IterationLevel6
+    - System.IterationLevel7
+    - System.IterationPath
+    - System.NodeName
+    - System.Parent
+    - System.Reason
+    - System.RelatedLinkCount
+    - System.RemoteLinkCount
+    - System.Rev
+    - System.RevisedDate
+    - System.State
+    - System.Tags
+    - System.TeamProject
+    - System.Title
+    - System.Watermark
+    - System.WorkItemType
+    required_fields:
+    - Microsoft.VSTS.Common.Priority
+    - Microsoft.VSTS.Common.ValueArea
+    - System.AreaId
+    - System.IterationId
+    - System.State
+    - System.Title
+  UserStory:
+    ado_work_item_type: User Story
+    available_fields:
+    - Custom.CRQ#
+    - Microsoft.VSTS.Build.IntegrationBuild
+    - Microsoft.VSTS.Common.AcceptanceCriteria
+    - Microsoft.VSTS.Common.ActivatedBy
+    - Microsoft.VSTS.Common.ActivatedDate
+    - Microsoft.VSTS.Common.ClosedBy
+    - Microsoft.VSTS.Common.ClosedDate
+    - Microsoft.VSTS.Common.Priority
+    - Microsoft.VSTS.Common.ResolvedBy
+    - Microsoft.VSTS.Common.ResolvedDate
+    - Microsoft.VSTS.Common.ResolvedReason
+    - Microsoft.VSTS.Common.Risk
+    - Microsoft.VSTS.Common.StackRank
+    - Microsoft.VSTS.Common.StateChangeDate
+    - Microsoft.VSTS.Common.ValueArea
+    - Microsoft.VSTS.Scheduling.FinishDate
+    - Microsoft.VSTS.Scheduling.StartDate
+    - Microsoft.VSTS.Scheduling.StoryPoints
+    - System.AreaId
+    - System.AreaLevel1
+    - System.AreaLevel2
+    - System.AreaLevel3
+    - System.AreaLevel4
+    - System.AreaLevel5
+    - System.AreaLevel6
+    - System.AreaLevel7
+    - System.AreaPath
+    - System.AssignedTo
+    - System.AttachedFileCount
+    - System.AuthorizedAs
+    - System.AuthorizedDate
+    - System.BoardColumn
+    - System.BoardColumnDone
+    - System.BoardLane
+    - System.ChangedBy
+    - System.ChangedDate
+    - System.CommentCount
+    - System.CreatedBy
+    - System.CreatedDate
+    - System.Description
+    - System.ExternalLinkCount
+    - System.History
+    - System.HyperLinkCount
+    - System.Id
+    - System.IterationId
+    - System.IterationLevel1
+    - System.IterationLevel2
+    - System.IterationLevel3
+    - System.IterationLevel4
+    - System.IterationLevel5
+    - System.IterationLevel6
+    - System.IterationLevel7
+    - System.IterationPath
+    - System.NodeName
+    - System.Parent
+    - System.Reason
+    - System.RelatedLinkCount
+    - System.RemoteLinkCount
+    - System.Rev
+    - System.RevisedDate
+    - System.State
+    - System.Tags
+    - System.TeamProject
+    - System.Title
+    - System.Watermark
+    - System.WorkItemType
+    required_fields:
+    - Microsoft.VSTS.Common.ValueArea
+    - System.AreaId
+    - System.IterationId
+    - System.State
+    - System.Title
+field_policy:
+  allowed_fields:
+    Feature: []
+    UserStory: []
+  required_fields:
+    Feature:
+    - priority
+    UserStory: []
+  generated_required_fields:
+    Feature:
+    - priority
+    UserStory: []
+  effective_required_fields:
+    Feature:
+    - priority
+    UserStory: []
+validation:
+  mapping_coverage_issues: []
+  strict_ready: true

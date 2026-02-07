@@ -1,5 +1,8 @@
-# Canonical/allowed fields beyond what ADO exposes.
-schema_version: "1.0"
-allowed_fields: {}
-required_fields: {}
-
+schema_version: '1.0'
+allowed_fields:
+  Feature: []
+  UserStory: []
+required_fields:
+  Feature:
+  - priority
+  UserStory: []

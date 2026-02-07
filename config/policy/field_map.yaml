@@ -1,0 +1,20 @@
+schema_version: "1.0"
+
+# Maps canonical bundle fields.* keys -> ADO reference fields.
+canonical_to_ado:
+  story_points:
+    reference_name: "Microsoft.VSTS.Scheduling.StoryPoints"
+    applies_to:
+      - UserStory
+    description: "Relative size estimate."
+  priority:
+    reference_name: "Microsoft.VSTS.Common.Priority"
+    applies_to:
+      - Feature
+      - UserStory
+    description: "Business priority ordering."
+  risk:
+    reference_name: "Microsoft.VSTS.Common.Risk"
+    applies_to:
+      - Feature
+    description: "Risk classification for Feature work."

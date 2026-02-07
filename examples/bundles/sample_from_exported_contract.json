@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "bundle_id": "2026-02-07_kr2_sprint03",
+  "source": {
+    "agent_name": "portable-agent",
+    "prompt_id": "roadmap-contract-driven-v1",
+    "generated_at": "2026-02-07T12:00:00Z"
+  },
+  "context": {
+    "project": "BlackLagoon",
+    "team": "DataScience",
+    "kr_id": "KR-2",
+    "sprint": "FY26-Q2-03",
+    "default_area_path": "Black Lagoon\\DSA",
+    "default_iteration_path": "Black Lagoon\\DSA"
+  },
+  "work_items": [
+    {
+      "local_id": "F-001",
+      "type": "Feature",
+      "title": "Validate canonical decomposition bundles before ADO writes",
+      "description": "Implement layered validation so invalid bundles are blocked before any write attempt.",
+      "acceptance_criteria": [
+        "Given a malformed bundle, when validation runs, then schema errors are reported with exact offending fields.",
+        "Given a valid bundle, when validation runs, then it is eligible for write planning without policy violations."
+      ],
+      "tags": ["KR-2", "adoctl", "validation", "bundle:2026-02-07_kr2_sprint03"],
+      "fields": {
+        "priority": 2,
+        "risk": "2 - Medium"
+      },
+      "relations": {
+        "parent_local_id": null
+      }
+    },
+    {
+      "local_id": "US-001",
+      "type": "UserStory",
+      "title": "As a team lead, I can run contract-driven validation, so that invalid work bundles are blocked before writes.",
+      "description": "Provide a command that validates schema, policy, and metadata in deterministic order and emits actionable reports.",
+      "acceptance_criteria": [
+        "Given duplicate local IDs, when validation runs, then the bundle fails with duplicate ID details.",
+        "Given unsupported canonical fields, when validation runs, then the report identifies each unknown field key."
+      ],
+      "tags": ["KR-2", "adoctl", "validation", "bundle:2026-02-07_kr2_sprint03"],
+      "fields": {
+        "story_points": 5,
+        "priority": 2
+      },
+      "relations": {
+        "parent_local_id": "F-001"
+      }
+    }
+  ]
+}

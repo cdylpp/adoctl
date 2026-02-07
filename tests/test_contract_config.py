@@ -1,0 +1,268 @@
+import tempfile
+import unittest
+from pathlib import Path
+
+import yaml
+
+from adoctl.config.contract_export import export_agent_contract
+from adoctl.config.contract_loader import load_effective_contract
+
+
+def _write_yaml(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(payload, f, sort_keys=False, allow_unicode=True)
+
+
+class TestContractConfig(unittest.TestCase):
+    def test_load_effective_contract_and_validate_coverage(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy_dir = root / "policy"
+            generated_dir = root / "generated"
+
+            _write_yaml(
+                policy_dir / "wit_map.yaml",
+                {
+                    "schema_version": "1.0",
+                    "canonical_to_ado": {"Feature": "Feature", "UserStory": "User Story"},
+                },
+            )
+            _write_yaml(
+                policy_dir / "field_map.yaml",
+                {
+                    "schema_version": "1.0",
+                    "canonical_to_ado": {
+                        "story_points": {
+                            "reference_name": "Microsoft.VSTS.Scheduling.StoryPoints",
+                            "applies_to": ["UserStory"],
+                            "description": "Relative estimate",
+                        }
+                    },
+                },
+            )
+            _write_yaml(
+                policy_dir / "link_policy.yaml",
+                {
+                    "schema_version": "1.0",
+                    "allowed_link_types": ["parent-child"],
+                    "max_depth": 2,
+                    "forbid_double_nesting": ["Feature", "UserStory"],
+                },
+            )
+            _write_yaml(
+                policy_dir / "standards.yaml",
+                {
+                    "schema_version": "1.0",
+                    "user_story_title_format": "As a <role>, I can <capability>, so that <benefit>.",
+                    "required_tags": [],
+                },
+            )
+            _write_yaml(
+                policy_dir / "field_policy.yaml",
+                {
+                    "schema_version": "1.0",
+                    "allowed_fields": {},
+                    "required_fields": {},
+                },
+            )
+            _write_yaml(
+                generated_dir / "wit_contract.yaml",
+                {
+                    "schema_version": "1.0",
+                    "work_item_types": {
+                        "Feature": {
+                            "fields": [
+                                {"reference_name": "System.Title", "required": True},
+                                {"reference_name": "Microsoft.VSTS.Common.Priority", "required": False},
+                            ]
+                        },
+                        "User Story": {
+                            "fields": [
+                                {"reference_name": "System.Title", "required": True},
+                                {"reference_name": "Microsoft.VSTS.Scheduling.StoryPoints", "required": False},
+                            ]
+                        },
+                    },
+                },
+            )
+
+            effective = load_effective_contract(policy_dir=policy_dir, generated_dir=generated_dir)
+            self.assertEqual(effective.resolve_ado_wit("Feature"), "Feature")
+            self.assertEqual(
+                effective.resolve_ado_field("story_points", canonical_type="UserStory"),
+                "Microsoft.VSTS.Scheduling.StoryPoints",
+            )
+            self.assertEqual(effective.validate_mapping_coverage(), [])
+
+    def test_export_agent_contract_writes_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy_dir = root / "policy"
+            generated_dir = root / "generated"
+            out_path = root / "agent_contract.yaml"
+
+            _write_yaml(
+                policy_dir / "wit_map.yaml",
+                {
+                    "schema_version": "1.0",
+                    "canonical_to_ado": {"Feature": "Feature", "UserStory": "User Story"},
+                },
+            )
+            _write_yaml(
+                policy_dir / "field_map.yaml",
+                {
+                    "schema_version": "1.0",
+                    "canonical_to_ado": {
+                        "priority": {
+                            "reference_name": "Microsoft.VSTS.Common.Priority",
+                            "applies_to": ["Feature", "UserStory"],
+                        }
+                    },
+                },
+            )
+            _write_yaml(
+                policy_dir / "link_policy.yaml",
+                {
+                    "schema_version": "1.0",
+                    "allowed_link_types": ["parent-child"],
+                    "max_depth": 2,
+                    "forbid_double_nesting": ["Feature", "UserStory"],
+                },
+            )
+            _write_yaml(
+                policy_dir / "standards.yaml",
+                {
+                    "schema_version": "1.0",
+                    "user_story_title_format": "As a <role>, I can <capability>, so that <benefit>.",
+                    "required_tags": ["KR-2"],
+                },
+            )
+            _write_yaml(
+                policy_dir / "field_policy.yaml",
+                {
+                    "schema_version": "1.0",
+                    "allowed_fields": {},
+                    "required_fields": {},
+                },
+            )
+            _write_yaml(
+                generated_dir / "wit_contract.yaml",
+                {
+                    "schema_version": "1.0",
+                    "work_item_types": {
+                        "Feature": {"fields": [{"reference_name": "Microsoft.VSTS.Common.Priority"}]},
+                        "User Story": {"fields": [{"reference_name": "Microsoft.VSTS.Common.Priority"}]},
+                    },
+                },
+            )
+
+            result = export_agent_contract(
+                out_path=str(out_path),
+                policy_dir=policy_dir,
+                generated_dir=generated_dir,
+            )
+            self.assertTrue(out_path.exists())
+            snapshot = yaml.safe_load(out_path.read_text(encoding="utf-8"))
+            self.assertEqual(result["strict_ready"], True)
+            self.assertEqual(snapshot["mapping"]["wit_map"]["Feature"], "Feature")
+            self.assertIn("priority", snapshot["mapping"]["field_map"])
+            self.assertEqual(snapshot["validation"]["mapping_coverage_issues"], [])
+
+    def test_export_syncs_field_policy_required_with_generated_precedence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy_dir = root / "policy"
+            generated_dir = root / "generated"
+            out_path = root / "agent_contract.yaml"
+            field_policy_path = policy_dir / "field_policy.yaml"
+
+            _write_yaml(
+                policy_dir / "wit_map.yaml",
+                {
+                    "schema_version": "1.0",
+                    "canonical_to_ado": {"Feature": "Feature", "UserStory": "User Story"},
+                },
+            )
+            _write_yaml(
+                policy_dir / "field_map.yaml",
+                {
+                    "schema_version": "1.0",
+                    "canonical_to_ado": {
+                        "priority": {
+                            "reference_name": "Microsoft.VSTS.Common.Priority",
+                            "applies_to": ["Feature"],
+                        },
+                        "story_points": {
+                            "reference_name": "Microsoft.VSTS.Scheduling.StoryPoints",
+                            "applies_to": ["UserStory"],
+                        },
+                    },
+                },
+            )
+            _write_yaml(
+                policy_dir / "field_policy.yaml",
+                {
+                    "schema_version": "1.0",
+                    "allowed_fields": {},
+                    "required_fields": {
+                        "UserStory": ["story_points"]
+                    },
+                },
+            )
+            _write_yaml(
+                policy_dir / "link_policy.yaml",
+                {
+                    "schema_version": "1.0",
+                    "allowed_link_types": ["parent-child"],
+                    "max_depth": 2,
+                    "forbid_double_nesting": ["Feature", "UserStory"],
+                },
+            )
+            _write_yaml(
+                policy_dir / "standards.yaml",
+                {
+                    "schema_version": "1.0",
+                    "user_story_title_format": "As a <role>, I can <capability>, so that <benefit>.",
+                    "required_tags": [],
+                },
+            )
+            _write_yaml(
+                generated_dir / "wit_contract.yaml",
+                {
+                    "schema_version": "1.0",
+                    "work_item_types": {
+                        "Feature": {
+                            "fields": [
+                                {"reference_name": "Microsoft.VSTS.Common.Priority", "required": True},
+                            ]
+                        },
+                        "User Story": {
+                            "fields": [
+                                {"reference_name": "Microsoft.VSTS.Scheduling.StoryPoints", "required": False},
+                            ]
+                        },
+                    },
+                },
+            )
+
+            result = export_agent_contract(
+                out_path=str(out_path),
+                policy_dir=policy_dir,
+                generated_dir=generated_dir,
+            )
+            self.assertTrue(result["field_policy_updated"])
+
+            updated_field_policy = yaml.safe_load(field_policy_path.read_text(encoding="utf-8"))
+            self.assertIn("Feature", updated_field_policy["required_fields"])
+            self.assertEqual(updated_field_policy["required_fields"]["Feature"], ["priority"])
+            self.assertEqual(updated_field_policy["required_fields"]["UserStory"], ["story_points"])
+
+            snapshot = yaml.safe_load(out_path.read_text(encoding="utf-8"))
+            self.assertEqual(snapshot["field_policy"]["generated_required_fields"]["Feature"], ["priority"])
+            self.assertEqual(snapshot["field_policy"]["effective_required_fields"]["Feature"], ["priority"])
+            self.assertEqual(snapshot["field_policy"]["effective_required_fields"]["UserStory"], ["story_points"])
+
+
+if __name__ == "__main__":
+    unittest.main()
