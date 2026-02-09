@@ -7,10 +7,10 @@ Traceback (most recent call last):
     raise SystemExit(main())
   File "C:\Users\cody.j.lepp.ctr\dev\adoctl-main\adoctl-main\adoctl\cli\main.py", line 281, in main
     sync_ado_to_yaml(cfg=cfg, out_dir=args.out_dir, wit_names=args.wit, sections=sections)
-  File "C:\Users\cody.j.lepp.ctr\dev\adoctl-main\adoctl-main\adoctl\sync\ado_sync.py", line 473, in sync_ado_to_yaml
+  File "C:\Users\cody.j.lepp.ctr\dev\adoctl-main\adoctl-main\adoctl\sync\ado_sync.py", line 466, in sync_ado_to_yaml      
     _sync_planning_semantics(
-  File "C:\Users\cody.j.lepp.ctr\dev\adoctl-main\adoctl-main\adoctl\sync\ado_sync.py", line 307, in_sync_planning_semantics
-    chunk_payload = ado_get(
+  File "C:\Users\cody.j.lepp.ctr\dev\adoctl-main\adoctl-main\adoctl\sync\ado_sync.py", line 302, in _sync_planning_semantics
+    work_item_payload = ado_get(
   File "C:\Users\cody.j.lepp.ctr\dev\adoctl-main\adoctl-main\adoctl\ado_client\http.py", line 21, in ado_get
     raise RuntimeError(f"ADO GET failed ({resp.status_code}) for {url}: {body}")
-RuntimeError: ADO GET failed (400) for <https://nswdevsecops.socom.mil/NSW/Black%20Lagoon/_apis/wit/workitems>: {"$id":"1","innerException":null,"message":"The expand parameter can not be used with the fields parameter.","typeName":"Microsoft.Azure.Boards.WebApi.Common.ConflictingParametersException, Microsoft.Azure.Boards.WebApi.Common","typeKey":"ConflictingParametersException","errorCode":0,"eventId":3000}
+RuntimeError: ADO GET failed (400) for https://nswdevsecops.socom.mil/NSW/Black%20Lagoon/_apis/wit/workitems/10140: {"$id":"1","innerException":null,"message":"The expand parameter can not be used with the fields parameter.","typeName":"Microsoft.Azure.Boards.WebApi.Common.ConflictingParametersException, Microsoft.Azure.Boards.WebApi.Common","typeKey":"ConflictingParametersException","errorCode":0,"eventId":3000}
