@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
+import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, Iterator, List, Optional
 
-from adoctl.ado_client.http import ado_get
+from adoctl.ado_client.http import ado_get, ado_post_json
 from adoctl.ado_client.models import ADOConfig
 from adoctl.util.fs import atomic_write_text, ensure_dir
 from adoctl.util.yaml_emit import render_yaml_with_header
@@ -42,6 +44,293 @@ def _dump_yaml(obj: Any, path: Path) -> None:
     )
 
 
+def _dump_json(obj: Any, path: Path) -> None:
+    ensure_dir(path.parent)
+    atomic_write_text(path, json.dumps(obj, indent=2, sort_keys=True) + "\n")
+
+
+def _extract_team_iteration_paths(payload: Dict[str, Any]) -> List[str]:
+    raw_items = payload.get("value", [])
+    if not isinstance(raw_items, list):
+        return []
+    parsed: List[str] = []
+    for item in raw_items:
+        if not isinstance(item, dict):
+            continue
+        path = item.get("path")
+        if isinstance(path, str) and path.strip():
+            parsed.append(path.strip().lstrip("\\"))
+    return sorted(set(parsed))
+
+
+def _extract_team_area_paths(payload: Dict[str, Any]) -> List[str]:
+    raw_items = payload.get("value", [])
+    if not isinstance(raw_items, list):
+        return []
+    parsed: List[str] = []
+    for item in raw_items:
+        if not isinstance(item, dict):
+            continue
+        path = item.get("value")
+        if isinstance(path, str) and path.strip():
+            parsed.append(path.strip().lstrip("\\"))
+    return sorted(set(parsed))
+
+
+def _filter_team_scoped_paths(paths: List[str], project: str, team_name: str) -> List[str]:
+    prefix = f"{project}\\{team_name}".lower()
+    scoped: List[str] = []
+    for path in paths:
+        normalized = path.strip()
+        if not normalized:
+            continue
+        lowered = normalized.lower()
+        if lowered == prefix or lowered.startswith(prefix + "\\"):
+            scoped.append(normalized)
+    return sorted(set(scoped))
+
+
+def _chunked(items: List[int], size: int) -> Iterator[List[int]]:
+    for idx in range(0, len(items), size):
+        yield items[idx : idx + size]
+
+
+def _parse_parent_id_from_relations(relations: Any) -> Optional[int]:
+    if not isinstance(relations, list):
+        return None
+    for relation in relations:
+        if not isinstance(relation, dict):
+            continue
+        rel_name = relation.get("rel")
+        if rel_name != "System.LinkTypes.Hierarchy-Reverse":
+            continue
+        url = relation.get("url")
+        if not isinstance(url, str):
+            continue
+        match = re.search(r"/workitems/(\d+)", url.lower())
+        if match:
+            return int(match.group(1))
+    return None
+
+
+def _extract_assigned_to(value: Any) -> Optional[str]:
+    if isinstance(value, str):
+        cleaned = value.strip()
+        return cleaned if cleaned else None
+    if isinstance(value, dict):
+        display = value.get("displayName")
+        unique = value.get("uniqueName")
+        if isinstance(display, str) and display.strip():
+            return display.strip()
+        if isinstance(unique, str) and unique.strip():
+            return unique.strip()
+    return None
+
+
+def _parse_objective_and_kr_items(work_items: List[Dict[str, Any]]) -> Dict[str, Any]:
+    objectives: List[Dict[str, Any]] = []
+    key_results: List[Dict[str, Any]] = []
+    objective_ids: set = set()
+
+    parsed_items: List[Dict[str, Any]] = []
+    for item in work_items:
+        if not isinstance(item, dict):
+            continue
+        raw_id = item.get("id")
+        if not isinstance(raw_id, int):
+            continue
+        fields = item.get("fields", {})
+        if not isinstance(fields, dict):
+            continue
+        wit_name = fields.get("System.WorkItemType")
+        if not isinstance(wit_name, str) or not wit_name.strip():
+            continue
+        parent_id: Optional[int] = None
+        raw_parent = fields.get("System.Parent")
+        if isinstance(raw_parent, int):
+            parent_id = raw_parent
+        elif isinstance(raw_parent, str) and raw_parent.isdigit():
+            parent_id = int(raw_parent)
+        if parent_id is None:
+            parent_id = _parse_parent_id_from_relations(item.get("relations"))
+
+        parsed_items.append(
+            {
+                "id": raw_id,
+                "title": fields.get("System.Title"),
+                "state": fields.get("System.State"),
+                "work_item_type": wit_name.strip(),
+                "area_path": fields.get("System.AreaPath"),
+                "iteration_path": fields.get("System.IterationPath"),
+                "assigned_to": _extract_assigned_to(fields.get("System.AssignedTo")),
+                "parent_id": parent_id,
+            }
+        )
+
+    for entry in parsed_items:
+        wit_lower = str(entry["work_item_type"]).strip().lower()
+        if wit_lower == "objective":
+            objective_ids.add(entry["id"])
+            objectives.append(entry)
+
+    for entry in parsed_items:
+        wit_lower = str(entry["work_item_type"]).strip().lower()
+        if wit_lower != "key result":
+            continue
+        parent_id = entry.get("parent_id")
+        key_result_entry = dict(entry)
+        key_result_entry["parent_objective_id"] = parent_id if isinstance(parent_id, int) and parent_id in objective_ids else None
+        key_results.append(key_result_entry)
+
+    objectives.sort(key=lambda item: item["id"])
+    key_results.sort(key=lambda item: item["id"])
+    orphan_key_results = [item for item in key_results if item.get("parent_objective_id") is None]
+
+    return {
+        "objectives": objectives,
+        "key_results": key_results,
+        "orphan_key_results": orphan_key_results,
+    }
+
+
+def _sync_planning_semantics(
+    cfg: ADOConfig,
+    out_path: Path,
+    teams_payload: Dict[str, Any],
+    area_paths: List[str],
+    iteration_paths: List[str],
+) -> None:
+    team_items = teams_payload.get("value", [])
+    if not isinstance(team_items, list):
+        team_items = []
+
+    team_settings_raw: Dict[str, Any] = {}
+    teams_semantics: List[Dict[str, Any]] = []
+    for team_payload in team_items:
+        if not isinstance(team_payload, dict):
+            continue
+        team_name = team_payload.get("name")
+        if not isinstance(team_name, str) or not team_name.strip():
+            continue
+        team_name = team_name.strip()
+
+        team_iteration_url = join_url(
+            cfg.org_url, cfg.project, team_name, "_apis", "work", "teamsettings", "iterations"
+        )
+        team_area_url = join_url(
+            cfg.org_url, cfg.project, team_name, "_apis", "work", "teamsettings", "teamfieldvalues"
+        )
+        team_iteration_payload = ado_get(cfg, team_iteration_url)
+        team_area_payload = ado_get(cfg, team_area_url)
+
+        team_iteration_setting_paths = _extract_team_iteration_paths(team_iteration_payload)
+        team_area_setting_paths = _extract_team_area_paths(team_area_payload)
+
+        scoped_iteration_paths = _filter_team_scoped_paths(iteration_paths, cfg.project or "", team_name)
+        scoped_area_paths = _filter_team_scoped_paths(area_paths, cfg.project or "", team_name)
+
+        default_iteration_path = f"{cfg.project}\\{team_name}"
+        default_area_path = f"{cfg.project}\\{team_name}"
+
+        allowed_iteration_paths = sorted(
+            set(team_iteration_setting_paths) | set(scoped_iteration_paths) | {default_iteration_path}
+        )
+        allowed_area_paths = sorted(set(team_area_setting_paths) | set(scoped_area_paths) | {default_area_path})
+
+        teams_semantics.append(
+            {
+                "id": team_payload.get("id"),
+                "name": team_name,
+                "default_iteration_path": default_iteration_path,
+                "default_area_path": default_area_path,
+                "allowed_iteration_paths": allowed_iteration_paths,
+                "allowed_area_paths": allowed_area_paths,
+                "team_settings_iteration_paths": team_iteration_setting_paths,
+                "team_settings_area_paths": team_area_setting_paths,
+            }
+        )
+
+        team_settings_raw[team_name] = {
+            "iterations_payload": team_iteration_payload,
+            "areas_payload": team_area_payload,
+        }
+
+    wiql_url = join_url(cfg.org_url, cfg.project, "_apis", "wit", "wiql")
+    wiql_query = {
+        "query": (
+            "SELECT [System.Id] "
+            "FROM WorkItems "
+            "WHERE [System.TeamProject] = @project "
+            "AND [System.WorkItemType] IN ('Objective', 'Key Result') "
+            "ORDER BY [System.Id]"
+        )
+    }
+    wiql_payload = ado_post_json(cfg, wiql_url, wiql_query)
+    wiql_items = wiql_payload.get("workItems", [])
+    objective_kr_ids: List[int] = []
+    if isinstance(wiql_items, list):
+        for item in wiql_items:
+            if isinstance(item, dict) and isinstance(item.get("id"), int):
+                objective_kr_ids.append(item["id"])
+
+    work_items_details: List[Dict[str, Any]] = []
+    if objective_kr_ids:
+        work_items_url = join_url(cfg.org_url, cfg.project, "_apis", "wit", "workitems")
+        requested_fields = ",".join(
+            [
+                "System.Id",
+                "System.WorkItemType",
+                "System.Title",
+                "System.State",
+                "System.AreaPath",
+                "System.IterationPath",
+                "System.AssignedTo",
+                "System.Parent",
+            ]
+        )
+        for id_chunk in _chunked(objective_kr_ids, 200):
+            chunk_payload = ado_get(
+                cfg,
+                work_items_url,
+                params={
+                    "ids": ",".join(str(item) for item in id_chunk),
+                    "fields": requested_fields,
+                    "$expand": "relations",
+                },
+            )
+            chunk_items = chunk_payload.get("value", [])
+            if isinstance(chunk_items, list):
+                work_items_details.extend([item for item in chunk_items if isinstance(item, dict)])
+
+    parsed_objective_kr = _parse_objective_and_kr_items(work_items_details)
+    planning_context = {
+        "schema_version": "1.0",
+        "generated_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "project": cfg.project,
+        "core_team": cfg.project,
+        "project_backlog_defaults": {
+            "iteration_path": cfg.project,
+            "area_path": cfg.project,
+        },
+        "teams": sorted(teams_semantics, key=lambda item: str(item["name"]).lower()),
+        "objectives": parsed_objective_kr["objectives"],
+        "key_results": parsed_objective_kr["key_results"],
+        "orphan_key_results": parsed_objective_kr["orphan_key_results"],
+    }
+    _dump_yaml(planning_context, out_path / "planning_context.yaml")
+
+    raw_dump_payload = {
+        "schema_version": "1.0",
+        "generated_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "project": cfg.project,
+        "teams_payload": teams_payload,
+        "team_settings_payloads": team_settings_raw,
+        "objective_kr_wiql_payload": wiql_payload,
+        "objective_kr_work_items_payload": work_items_details,
+    }
+    _dump_json(raw_dump_payload, out_path / "planning_sync_dump.json")
+
+
 def sync_ado_to_yaml(
     cfg: ADOConfig,
     out_dir: str,
@@ -51,12 +340,33 @@ def sync_ado_to_yaml(
     """
     Syncs selected ADO metadata into YAML files under out_dir.
 
-    sections: iterable of {"projects", "paths", "teams", "wit"}
+    sections: iterable of {"projects", "paths", "teams", "wit", "planning"}
     """
     out_path = Path(out_dir)
     ensure_dir(out_path)
 
-    requested = set(sections or ["projects", "paths", "teams", "wit"])
+    requested = set(sections or ["projects", "paths", "teams", "wit", "planning"])
+
+    teams_payload: Dict[str, Any] = {}
+    normalized_teams: List[Dict[str, Any]] = []
+    if "teams" in requested or "planning" in requested:
+        if not cfg.project:
+            raise ValueError("cfg.project is required to sync teams and planning metadata.")
+        teams_url = join_url(cfg.org_url, cfg.project, "_apis", "teams")
+        teams_payload = ado_get(cfg, teams_url)
+        raw_teams = teams_payload.get("value", [])
+        if isinstance(raw_teams, list):
+            normalized_teams = [
+                {
+                    "id": t.get("id"),
+                    "name": t.get("name"),
+                    "description": t.get("description"),
+                    "url": t.get("url"),
+                    "identity_url": t.get("identityUrl"),
+                }
+                for t in raw_teams
+                if isinstance(t, dict)
+            ]
 
     if "projects" in requested:
         projects_url = join_url(cfg.org_url, "_apis", "projects")
@@ -74,9 +384,11 @@ def sync_ado_to_yaml(
         ]
         _dump_yaml({"projects": normalized}, out_path / "projects.yaml")
 
-    if "paths" in requested:
+    area_paths: List[str] = []
+    iteration_paths: List[str] = []
+    if "paths" in requested or "planning" in requested:
         if not cfg.project:
-            raise ValueError("cfg.project is required to sync area/iteration paths.")
+            raise ValueError("cfg.project is required to sync area/iteration paths and planning metadata.")
 
         areas_url = join_url(cfg.org_url, cfg.project, "_apis", "wit", "classificationnodes", "areas")
         iters_url = join_url(cfg.org_url, cfg.project, "_apis", "wit", "classificationnodes", "iterations")
@@ -87,26 +399,11 @@ def sync_ado_to_yaml(
         area_paths = _flatten_classification_paths(areas_tree)
         iteration_paths = _flatten_classification_paths(iters_tree)
 
-        _dump_yaml({"area_paths": area_paths}, out_path / "paths_area.yaml")
-        _dump_yaml({"iteration_paths": iteration_paths}, out_path / "paths_iteration.yaml")
+        if "paths" in requested:
+            _dump_yaml({"area_paths": area_paths}, out_path / "paths_area.yaml")
+            _dump_yaml({"iteration_paths": iteration_paths}, out_path / "paths_iteration.yaml")
 
     if "teams" in requested:
-        if not cfg.project:
-            raise ValueError("cfg.project is required to sync teams.")
-
-        teams_url = join_url(cfg.org_url, cfg.project, "_apis", "teams")
-        teams = ado_get(cfg, teams_url).get("value", [])
-        normalized_teams = [
-            {
-                "id": t.get("id"),
-                "name": t.get("name"),
-                "description": t.get("description"),
-                "url": t.get("url"),
-                "identity_url": t.get("identityUrl"),
-            }
-            for t in teams
-            if isinstance(t, dict)
-        ]
         _dump_yaml({"project": cfg.project, "teams": normalized_teams}, out_path / "teams.yaml")
 
     if "wit" in requested:
@@ -153,6 +450,17 @@ def sync_ado_to_yaml(
             }
 
         _dump_yaml(wit_contract, out_path / "wit_contract.yaml")
+
+    if "planning" in requested:
+        if not cfg.project:
+            raise ValueError("cfg.project is required to sync planning metadata.")
+        _sync_planning_semantics(
+            cfg=cfg,
+            out_path=out_path,
+            teams_payload=teams_payload,
+            area_paths=area_paths,
+            iteration_paths=iteration_paths,
+        )
 
     sync_state = {
         "schema_version": "1.0",

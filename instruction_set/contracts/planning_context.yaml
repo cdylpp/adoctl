@@ -1,0 +1,14 @@
+# REPLACE THIS FILE AFTER EACH PLANNING SYNC.
+# Source of truth: config/generated/planning_context.yaml
+
+schema_version: "1.0"
+generated_at_utc: "REPLACE_WITH_SYNC_OUTPUT"
+project: "REPLACE_WITH_PROJECT_NAME"
+core_team: "REPLACE_WITH_PROJECT_NAME"
+project_backlog_defaults:
+  iteration_path: "REPLACE_WITH_PROJECT_BACKLOG_ITERATION_PATH"
+  area_path: "REPLACE_WITH_PROJECT_BACKLOG_AREA_PATH"
+teams: []
+objectives: []
+key_results: []
+orphan_key_results: []

@@ -7,6 +7,7 @@ These are the operational efficiency constraints that keep the system stable.
 1. Treat `config/generated` metadata as the source for validation.
 2. Sync only necessary metadata sections unless full refresh is required.
 3. Keep the exported agent contract compact and stable.
+4. Sync planning context (`--planning-only`) to refresh team-scoped paths and Objective/Key Result context without pulling unrelated metadata.
 
 ## Practical Guidance For External Agents
 

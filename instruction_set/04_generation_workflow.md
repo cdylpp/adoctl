@@ -7,11 +7,15 @@ Use this sequence for every decomposition task.
 1. Read sprint goal inputs from the user.
 2. Read `contracts/bundle.schema.json`.
 3. Read `contracts/agent_contract.yaml`.
-4. Build Features aligned to goals.
-5. Build UserStories under Features with `relations.parent_local_id`.
-6. Populate canonical `fields` using only allowed canonical keys.
-7. Validate output against the checklist below.
-8. Return JSON only.
+4. Read `contracts/planning_context.yaml`.
+5. Build Features aligned to goals.
+6. Build UserStories under Features with `relations.parent_local_id`.
+7. Populate canonical `fields` using only allowed canonical keys.
+8. Apply defaults from planning context:
+   - team work defaults to `project\\team` backlog paths
+   - project-level work defaults to project backlog paths
+9. Validate output against the checklist below.
+10. Return JSON only.
 
 ## Pre-Output Checklist
 

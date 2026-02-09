@@ -47,6 +47,8 @@ Layered configuration (do not mix responsibilities between layers).
   - `teams.yaml` — teams for the selected project.
   - `paths_area.yaml` — flattened Area paths.
   - `paths_iteration.yaml` — flattened Iteration paths.
+  - `planning_context.yaml` — team-scoped allowed paths + Objective/Key Result semantics.
+  - `planning_sync_dump.json` — raw ADO planning metadata dump used to derive planning semantics.
   - `wit_contract.yaml` — work item type fields and metadata.
   - `_sync_state.yaml` — sync metadata (timestamps, version, sections).
 - `config/local/` — local operator context for CLI UX.
@@ -127,6 +129,8 @@ Local log output (future: structured logs + redaction).
 - Set PAT in env: `export ADO_PAT="..."`
 - Run sync:
   - `python -m adoctl sync --org-url "https://dev.azure.com/<ORG>" --project "<PROJECT>" --all`
+  - Planning-only sync (teams + team paths + Objective/Key Result semantics):
+    - `python -m adoctl sync --org-url "https://dev.azure.com/<ORG>" --project "<PROJECT>" --planning-only`
 
 Optional home/context UX:
 
@@ -205,3 +209,8 @@ Bootstrap policy metadata from team wiki docs (one-time seed):
   - resolves parent links from in-run creates, registry local IDs, or numeric ADO IDs
   - stops on first error and writes audit with failure reason
   - archives successfully written bundles from `outbox/validated/` to `outbox/archived/`
+
+4) Replicate planning semantics into external instruction set:
+
+- Copy generated planning context after sync:
+  - `cp config/generated/planning_context.yaml instruction_set/contracts/planning_context.yaml`

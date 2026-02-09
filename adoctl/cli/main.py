@@ -61,6 +61,11 @@ def _build_parser() -> argparse.ArgumentParser:
     group.add_argument("--paths", action="store_true", help="Sync area + iteration paths only")
     group.add_argument("--teams-only", action="store_true", help="Sync teams only")
     group.add_argument("--wit-only", action="store_true", help="Sync WIT fields only")
+    group.add_argument(
+        "--planning-only",
+        action="store_true",
+        help="Sync planning metadata (team-scoped paths + Objectives/Key Results) only",
+    )
 
     subparsers.add_parser("home", help="Show interactive home screen")
 
@@ -199,7 +204,9 @@ def _sync_sections(args: argparse.Namespace) -> List[str]:
         return ["teams"]
     if args.wit_only:
         return ["wit"]
-    return ["projects", "paths", "teams", "wit"]
+    if args.planning_only:
+        return ["planning"]
+    return ["projects", "paths", "teams", "wit", "planning"]
 
 
 def _merge_context(
@@ -254,7 +261,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         if not org_url:
             parser.error("Missing org URL. Pass --org-url or set it via `adoctl home` / `adoctl context set --org-url`.")
-        if any(section in {"paths", "teams", "wit"} for section in sections) and not project:
+        if any(section in {"paths", "teams", "wit", "planning"} for section in sections) and not project:
             parser.error(
                 "Missing project. Pass --project or set it via `adoctl home` / `adoctl context set --project`."
             )
