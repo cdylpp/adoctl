@@ -1,0 +1,1078 @@
+{
+  "generated_at_utc": "2026-02-09T19:26:45.585978+00:00",
+  "objective_kr_wiql_payload": {
+    "asOf": "2026-02-09T19:26:42.537Z",
+    "columns": [
+      {
+        "name": "ID",
+        "referenceName": "System.Id",
+        "url": "https://nswdevsecops.socom.mil/NSW/_apis/wit/fields/System.Id"
+      }
+    ],
+    "queryResultType": "workItem",
+    "queryType": "flat",
+    "sortColumns": [
+      {
+        "descending": false,
+        "field": {
+          "name": "ID",
+          "referenceName": "System.Id",
+          "url": "https://nswdevsecops.socom.mil/NSW/_apis/wit/fields/System.Id"
+        }
+      }
+    ],
+    "workItems": [
+      {
+        "id": 10140,
+        "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10140"
+      },
+      {
+        "id": 10141,
+        "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10141"
+      },
+      {
+        "id": 10213,
+        "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10213"
+      },
+      {
+        "id": 10214,
+        "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10214"
+      },
+      {
+        "id": 10215,
+        "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10215"
+      }
+    ]
+  },
+  "objective_kr_work_items_payload": [
+    {
+      "_links": {
+        "fields": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/fields"
+        },
+        "html": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_workitems/edit/10140"
+        },
+        "self": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10140"
+        },
+        "workItemComments": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10140/comments"
+        },
+        "workItemRevisions": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10140/revisions"
+        },
+        "workItemType": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItemTypes/Objective"
+        },
+        "workItemUpdates": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10140/updates"
+        }
+      },
+      "fields": {
+        "System.AreaPath": "Black Lagoon",
+        "System.Id": 10140,
+        "System.IterationPath": "Black Lagoon",
+        "System.State": "New",
+        "System.Title": "Train / Organize ",
+        "System.WorkItemType": "Objective"
+      },
+      "id": 10140,
+      "rev": 4,
+      "url": "https://nswdevsecops.socom.mil/NSW/_apis/wit/workItems/10140"
+    },
+    {
+      "_links": {
+        "fields": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/fields"
+        },
+        "html": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_workitems/edit/10141"
+        },
+        "self": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10141"
+        },
+        "workItemComments": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10141/comments"
+        },
+        "workItemRevisions": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10141/revisions"
+        },
+        "workItemType": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItemTypes/Objective"
+        },
+        "workItemUpdates": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10141/updates"
+        }
+      },
+      "fields": {
+        "System.AreaPath": "Black Lagoon",
+        "System.Id": 10141,
+        "System.IterationPath": "Black Lagoon",
+        "System.State": "New",
+        "System.Title": "Equip",
+        "System.WorkItemType": "Objective"
+      },
+      "id": 10141,
+      "rev": 4,
+      "url": "https://nswdevsecops.socom.mil/NSW/_apis/wit/workItems/10141"
+    },
+    {
+      "_links": {
+        "fields": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/fields"
+        },
+        "html": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_workitems/edit/10213"
+        },
+        "self": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10213"
+        },
+        "workItemComments": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10213/comments"
+        },
+        "workItemRevisions": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10213/revisions"
+        },
+        "workItemType": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItemTypes/Objective"
+        },
+        "workItemUpdates": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10213/updates"
+        }
+      },
+      "fields": {
+        "System.AreaPath": "Black Lagoon",
+        "System.Id": 10213,
+        "System.IterationPath": "Black Lagoon",
+        "System.State": "New",
+        "System.Title": "Man",
+        "System.WorkItemType": "Objective"
+      },
+      "id": 10213,
+      "rev": 3,
+      "url": "https://nswdevsecops.socom.mil/NSW/_apis/wit/workItems/10213"
+    },
+    {
+      "_links": {
+        "fields": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/fields"
+        },
+        "html": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_workitems/edit/10214"
+        },
+        "self": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10214"
+        },
+        "workItemComments": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10214/comments"
+        },
+        "workItemRevisions": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10214/revisions"
+        },
+        "workItemType": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItemTypes/Objective"
+        },
+        "workItemUpdates": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10214/updates"
+        }
+      },
+      "fields": {
+        "System.AreaPath": "Black Lagoon",
+        "System.Id": 10214,
+        "System.IterationPath": "Black Lagoon",
+        "System.State": "New",
+        "System.Title": "Modernize",
+        "System.WorkItemType": "Objective"
+      },
+      "id": 10214,
+      "rev": 3,
+      "url": "https://nswdevsecops.socom.mil/NSW/_apis/wit/workItems/10214"
+    },
+    {
+      "_links": {
+        "fields": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/fields"
+        },
+        "html": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_workitems/edit/10215"
+        },
+        "self": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10215"
+        },
+        "workItemComments": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10215/comments"
+        },
+        "workItemRevisions": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10215/revisions"
+        },
+        "workItemType": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItemTypes/Objective"
+        },
+        "workItemUpdates": {
+          "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/workItems/10215/updates"
+        }
+      },
+      "fields": {
+        "System.AreaPath": "Black Lagoon",
+        "System.Id": 10215,
+        "System.IterationPath": "Black Lagoon",
+        "System.State": "New",
+        "System.Title": "Sustain",
+        "System.WorkItemType": "Objective"
+      },
+      "id": 10215,
+      "rev": 3,
+      "url": "https://nswdevsecops.socom.mil/NSW/_apis/wit/workItems/10215"
+    }
+  ],
+  "project": "Black Lagoon",
+  "schema_version": "1.0",
+  "team_settings_payloads": {
+    "Data Science and Analytics": {
+      "areas_payload": {
+        "_links": {
+          "areaPathClassificationNodes": {
+            "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/classificationNodes/Areas"
+          },
+          "project": {
+            "href": "https://nswdevsecops.socom.mil/NSW/_apis/projects/a91ee819-8d82-4e7a-a81c-3f7ed357ab17"
+          },
+          "self": {
+            "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/teamfieldvalues"
+          },
+          "team": {
+            "href": "https://nswdevsecops.socom.mil/NSW/_apis/projects/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/teams/737dd9ec-a9fa-41ff-8723-70c60f3c5736"
+          },
+          "teamSettings": {
+            "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings"
+          }
+        },
+        "defaultValue": "Black Lagoon\\Data Science and Analytics",
+        "field": {
+          "referenceName": "System.AreaPath",
+          "url": "https://nswdevsecops.socom.mil/NSW/_apis/wit/fields/System.AreaPath"
+        },
+        "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/teamfieldvalues",
+        "values": [
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\Data Science and Analytics\\admin"
+          },
+          {
+            "includeChildren": true,
+            "value": "Black Lagoon\\Data Science and Analytics"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\Data Science and Analytics\\ops\\center-of-excellence"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\Data Science and Analytics\\ops\\wiki"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\Data Science and Analytics\\strategy"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\Data Science and Analytics\\strategy\\ai-adoption"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\Data Science and Analytics\\strategy\\black-lagoon"
+          }
+        ]
+      },
+      "iterations_payload": {
+        "count": 25,
+        "value": [
+          {
+            "attributes": {
+              "finishDate": "2025-07-21T00:00:00Z",
+              "startDate": "2025-07-08T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "4a4fda48-df67-481d-b481-22f2d14368c8",
+            "name": "25-00",
+            "path": "Black Lagoon\\DSA\\25-00",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/4a4fda48-df67-481d-b481-22f2d14368c8"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-08-05T00:00:00Z",
+              "startDate": "2025-07-22T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "0e6fa207-794a-4cc9-a681-cbbe7e5890b7",
+            "name": "25-01",
+            "path": "Black Lagoon\\DSA\\25-01",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/0e6fa207-794a-4cc9-a681-cbbe7e5890b7"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-08-18T00:00:00Z",
+              "startDate": "2025-08-05T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "b042c4fe-a0ca-426a-b76f-06519f76f5d4",
+            "name": "25-02",
+            "path": "Black Lagoon\\DSA\\25-02",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/b042c4fe-a0ca-426a-b76f-06519f76f5d4"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-09-01T00:00:00Z",
+              "startDate": "2025-08-19T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "96e0604a-8377-4176-8752-b6b98892f4a5",
+            "name": "25-03",
+            "path": "Black Lagoon\\DSA\\25-03",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/96e0604a-8377-4176-8752-b6b98892f4a5"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-09-15T00:00:00Z",
+              "startDate": "2025-09-02T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "4b2345fe-9d53-42f5-b254-2811b06323c7",
+            "name": "25-04",
+            "path": "Black Lagoon\\DSA\\25-04",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/4b2345fe-9d53-42f5-b254-2811b06323c7"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-09-29T00:00:00Z",
+              "startDate": "2025-09-16T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "9bc17999-f8dd-4764-ab28-07e7f469b869",
+            "name": "25-05",
+            "path": "Black Lagoon\\DSA\\25-05",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/9bc17999-f8dd-4764-ab28-07e7f469b869"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-10-13T00:00:00Z",
+              "startDate": "2025-09-30T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "7eafbb44-9e74-4bed-900a-556e507fcd04",
+            "name": "26-00",
+            "path": "Black Lagoon\\DSA\\26-00",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/7eafbb44-9e74-4bed-900a-556e507fcd04"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-10-27T00:00:00Z",
+              "startDate": "2025-10-14T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "86a02743-b578-4c09-811f-37482556443f",
+            "name": "26-Q1-01",
+            "path": "Black Lagoon\\DSA\\26-Q1-01",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/86a02743-b578-4c09-811f-37482556443f"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-11-10T00:00:00Z",
+              "startDate": "2025-10-28T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "cf18a7bc-6d57-47a0-8dda-1aa6e71ad1e5",
+            "name": "26-Q1-02",
+            "path": "Black Lagoon\\DSA\\26-Q1-02",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/cf18a7bc-6d57-47a0-8dda-1aa6e71ad1e5"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-11-24T00:00:00Z",
+              "startDate": "2025-11-11T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "b9de69cb-946c-4173-b353-6a4a64b68018",
+            "name": "26-Q1-03",
+            "path": "Black Lagoon\\DSA\\26-Q1-03",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/b9de69cb-946c-4173-b353-6a4a64b68018"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-12-08T00:00:00Z",
+              "startDate": "2025-11-25T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "cde770da-2651-4ac1-8c54-1edadd8a3386",
+            "name": "26-Q1-04",
+            "path": "Black Lagoon\\DSA\\26-Q1-04",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/cde770da-2651-4ac1-8c54-1edadd8a3386"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-12-22T00:00:00Z",
+              "startDate": "2025-12-09T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "49cbc450-9da8-463f-ad1c-4ae19f104312",
+            "name": "26-Q1-05",
+            "path": "Black Lagoon\\DSA\\26-Q1-05",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/49cbc450-9da8-463f-ad1c-4ae19f104312"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-01-05T00:00:00Z",
+              "startDate": "2025-12-23T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "f834a103-3ece-4fa7-8336-409fa7e6c70c",
+            "name": "26-Q1-06",
+            "path": "Black Lagoon\\DSA\\26-Q1-06",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/f834a103-3ece-4fa7-8336-409fa7e6c70c"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-01-16T00:00:00Z",
+              "startDate": "2026-01-05T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "10e70569-9dca-4c0d-bcab-0b66ca6226fc",
+            "name": "FY26-Q2-01",
+            "path": "Black Lagoon\\DSA\\FY26-Q2-01",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/10e70569-9dca-4c0d-bcab-0b66ca6226fc"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-01-30T00:00:00Z",
+              "startDate": "2026-01-19T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "8426e78e-8ada-4970-b88b-939883a10059",
+            "name": "FY26-Q2-02",
+            "path": "Black Lagoon\\DSA\\FY26-Q2-02",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/8426e78e-8ada-4970-b88b-939883a10059"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-02-13T00:00:00Z",
+              "startDate": "2026-02-02T00:00:00Z",
+              "timeFrame": "current"
+            },
+            "id": "f217ccac-78d9-4f1b-a0b3-4923ed80d382",
+            "name": "FY26-Q2-03",
+            "path": "Black Lagoon\\DSA\\FY26-Q2-03",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/f217ccac-78d9-4f1b-a0b3-4923ed80d382"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-02-27T00:00:00Z",
+              "startDate": "2026-02-16T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "9c5d907a-a45f-46d9-acf5-bc25abb275d7",
+            "name": "FY26-Q2-04",
+            "path": "Black Lagoon\\DSA\\FY26-Q2-04",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/9c5d907a-a45f-46d9-acf5-bc25abb275d7"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-03-13T00:00:00Z",
+              "startDate": "2026-03-02T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "13ff284c-44d8-459e-9e4f-6ef2acb1dd9d",
+            "name": "FY26-Q2-05",
+            "path": "Black Lagoon\\DSA\\FY26-Q2-05",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/13ff284c-44d8-459e-9e4f-6ef2acb1dd9d"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-03-31T00:00:00Z",
+              "startDate": "2026-03-16T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "323a1e96-7632-4a2d-9cac-21a4c770b121",
+            "name": "FY26-Q2-06",
+            "path": "Black Lagoon\\DSA\\FY26-Q2-06",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/323a1e96-7632-4a2d-9cac-21a4c770b121"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-04-17T00:00:00Z",
+              "startDate": "2026-04-01T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "84c09c73-bd67-4ce6-9d30-d26bd13d3581",
+            "name": "FY26-Q3-01",
+            "path": "Black Lagoon\\DSA\\FY26-Q3-01",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/84c09c73-bd67-4ce6-9d30-d26bd13d3581"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-05-01T00:00:00Z",
+              "startDate": "2026-04-20T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "3b554363-68be-442e-b698-23ea8bf966a6",
+            "name": "FY26-Q3-02",
+            "path": "Black Lagoon\\DSA\\FY26-Q3-02",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/3b554363-68be-442e-b698-23ea8bf966a6"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-05-15T00:00:00Z",
+              "startDate": "2026-05-04T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "324fcb67-deeb-478c-a0ef-935b2e2e07e6",
+            "name": "FY26-Q3-03",
+            "path": "Black Lagoon\\DSA\\FY26-Q3-03",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/324fcb67-deeb-478c-a0ef-935b2e2e07e6"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-05-29T00:00:00Z",
+              "startDate": "2026-05-18T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "8cf5db2b-b32f-4560-b07e-9e7aa9e45654",
+            "name": "FY26-Q3-04",
+            "path": "Black Lagoon\\DSA\\FY26-Q3-04",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/8cf5db2b-b32f-4560-b07e-9e7aa9e45654"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-06-12T00:00:00Z",
+              "startDate": "2026-06-01T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "7e6d9d3f-47bf-452f-8cd5-be42a5564426",
+            "name": "FY26-Q3-05",
+            "path": "Black Lagoon\\DSA\\FY26-Q3-05",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/7e6d9d3f-47bf-452f-8cd5-be42a5564426"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-06-30T00:00:00Z",
+              "startDate": "2026-06-15T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "d658f307-6781-4edf-bdc1-777d3a2a2a44",
+            "name": "FY26-Q3-06",
+            "path": "Black Lagoon\\DSA\\FY26-Q3-06",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/737dd9ec-a9fa-41ff-8723-70c60f3c5736/_apis/work/teamsettings/iterations/d658f307-6781-4edf-bdc1-777d3a2a2a44"
+          }
+        ]
+      }
+    },
+    "Digital Transformation": {
+      "areas_payload": {
+        "_links": {
+          "areaPathClassificationNodes": {
+            "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/classificationNodes/Areas"
+          },
+          "project": {
+            "href": "https://nswdevsecops.socom.mil/NSW/_apis/projects/a91ee819-8d82-4e7a-a81c-3f7ed357ab17"
+          },
+          "self": {
+            "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/154af80d-9194-484b-8b47-bde168a596f0/_apis/work/teamsettings/teamfieldvalues"
+          },
+          "team": {
+            "href": "https://nswdevsecops.socom.mil/NSW/_apis/projects/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/teams/154af80d-9194-484b-8b47-bde168a596f0"
+          },
+          "teamSettings": {
+            "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/154af80d-9194-484b-8b47-bde168a596f0/_apis/work/teamsettings"
+          }
+        },
+        "defaultValue": "Black Lagoon\\Digital Transformation",
+        "field": {
+          "referenceName": "System.AreaPath",
+          "url": "https://nswdevsecops.socom.mil/NSW/_apis/wit/fields/System.AreaPath"
+        },
+        "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/154af80d-9194-484b-8b47-bde168a596f0/_apis/work/teamsettings/teamfieldvalues",
+        "values": [
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon"
+          },
+          {
+            "includeChildren": true,
+            "value": "Black Lagoon\\Digital Transformation"
+          }
+        ]
+      },
+      "iterations_payload": {
+        "count": 10,
+        "value": [
+          {
+            "attributes": {
+              "finishDate": "2025-09-26T00:00:00Z",
+              "startDate": "2025-09-15T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "26896e62-600c-4a38-a5c3-09c10dba3c34",
+            "name": "Sprint 69",
+            "path": "Black Lagoon\\DT\\Sprint 69",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/154af80d-9194-484b-8b47-bde168a596f0/_apis/work/teamsettings/iterations/26896e62-600c-4a38-a5c3-09c10dba3c34"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-10-10T00:00:00Z",
+              "startDate": "2025-09-29T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "60d60468-04b4-4434-ab77-41b176867954",
+            "name": "Sprint 70",
+            "path": "Black Lagoon\\DT\\Sprint 70",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/154af80d-9194-484b-8b47-bde168a596f0/_apis/work/teamsettings/iterations/60d60468-04b4-4434-ab77-41b176867954"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-10-24T00:00:00Z",
+              "startDate": "2025-10-13T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "a8c4da64-3683-4d34-bc17-375846d9cd1d",
+            "name": "Sprint 71",
+            "path": "Black Lagoon\\DT\\Sprint 71",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/154af80d-9194-484b-8b47-bde168a596f0/_apis/work/teamsettings/iterations/a8c4da64-3683-4d34-bc17-375846d9cd1d"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-11-07T00:00:00Z",
+              "startDate": "2025-10-27T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "281c3654-54be-400d-aaac-95380a889fcc",
+            "name": "Sprint 72",
+            "path": "Black Lagoon\\DT\\Sprint 72",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/154af80d-9194-484b-8b47-bde168a596f0/_apis/work/teamsettings/iterations/281c3654-54be-400d-aaac-95380a889fcc"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-11-21T00:00:00Z",
+              "startDate": "2025-11-10T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "0980de2a-906f-4e49-8c5d-f5dc241d36fe",
+            "name": "Sprint 73",
+            "path": "Black Lagoon\\DT\\Sprint 73",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/154af80d-9194-484b-8b47-bde168a596f0/_apis/work/teamsettings/iterations/0980de2a-906f-4e49-8c5d-f5dc241d36fe"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-12-05T00:00:00Z",
+              "startDate": "2025-11-24T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "e94e7f51-b4df-4d69-986d-5d86cb0c2b6c",
+            "name": "Sprint 74",
+            "path": "Black Lagoon\\DT\\Sprint 74",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/154af80d-9194-484b-8b47-bde168a596f0/_apis/work/teamsettings/iterations/e94e7f51-b4df-4d69-986d-5d86cb0c2b6c"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-12-19T00:00:00Z",
+              "startDate": "2025-12-08T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "5b543095-33e9-4d3a-8209-4b725c489e8a",
+            "name": "Sprint 75",
+            "path": "Black Lagoon\\DT\\Sprint 75",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/154af80d-9194-484b-8b47-bde168a596f0/_apis/work/teamsettings/iterations/5b543095-33e9-4d3a-8209-4b725c489e8a"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-01-16T00:00:00Z",
+              "startDate": "2026-01-05T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "23adc1b7-22fa-4fe8-8583-61f0f31fa263",
+            "name": "FY26-Q2-01",
+            "path": "Black Lagoon\\DT\\FY26-Q2-01",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/154af80d-9194-484b-8b47-bde168a596f0/_apis/work/teamsettings/iterations/23adc1b7-22fa-4fe8-8583-61f0f31fa263"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-01-30T00:00:00Z",
+              "startDate": "2026-01-19T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "05ba6fba-c10e-4aeb-9280-b9d79d04bab8",
+            "name": "FY26-Q2-02",
+            "path": "Black Lagoon\\DT\\FY26-Q2-02",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/154af80d-9194-484b-8b47-bde168a596f0/_apis/work/teamsettings/iterations/05ba6fba-c10e-4aeb-9280-b9d79d04bab8"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-02-13T00:00:00Z",
+              "startDate": "2026-02-02T00:00:00Z",
+              "timeFrame": "current"
+            },
+            "id": "465183d2-c947-48bf-8e3c-33c32e47805a",
+            "name": "FY26-Q2-03",
+            "path": "Black Lagoon\\DT\\FY26-Q2-03",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/154af80d-9194-484b-8b47-bde168a596f0/_apis/work/teamsettings/iterations/465183d2-c947-48bf-8e3c-33c32e47805a"
+          }
+        ]
+      }
+    },
+    "KM": {
+      "areas_payload": {
+        "_links": {
+          "areaPathClassificationNodes": {
+            "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/_apis/wit/classificationNodes/Areas"
+          },
+          "project": {
+            "href": "https://nswdevsecops.socom.mil/NSW/_apis/projects/a91ee819-8d82-4e7a-a81c-3f7ed357ab17"
+          },
+          "self": {
+            "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/teamfieldvalues"
+          },
+          "team": {
+            "href": "https://nswdevsecops.socom.mil/NSW/_apis/projects/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/teams/c3484290-7096-457a-8735-4efc433a427f"
+          },
+          "teamSettings": {
+            "href": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings"
+          }
+        },
+        "defaultValue": "Black Lagoon\\KM",
+        "field": {
+          "referenceName": "System.AreaPath",
+          "url": "https://nswdevsecops.socom.mil/NSW/_apis/wit/fields/System.AreaPath"
+        },
+        "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/teamfieldvalues",
+        "values": [
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\KM"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\KM\\Admin"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\KM\\EWMS"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\KM\\Power Apps"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\KM\\Power Automate"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\KM\\Power BI"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\KM\\Process Analysis"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\KM\\Records Management"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\KM\\SharePoint"
+          },
+          {
+            "includeChildren": false,
+            "value": "Black Lagoon\\KM\\TMT"
+          }
+        ]
+      },
+      "iterations_payload": {
+        "count": 22,
+        "value": [
+          {
+            "attributes": {
+              "finishDate": "2025-11-21T00:00:00Z",
+              "startDate": "2025-11-10T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "b8c3e2ef-44de-421a-a78a-163f798c6cbb",
+            "name": "Sprint 0",
+            "path": "Black Lagoon\\KM\\Sprint 0",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/b8c3e2ef-44de-421a-a78a-163f798c6cbb"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-12-05T00:00:00Z",
+              "startDate": "2025-11-24T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "b6bc9cd4-87b3-44da-b3d2-fc86a05c62c7",
+            "name": "Sprint 1",
+            "path": "Black Lagoon\\KM\\Sprint 1",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/b6bc9cd4-87b3-44da-b3d2-fc86a05c62c7"
+          },
+          {
+            "attributes": {
+              "finishDate": "2025-12-19T00:00:00Z",
+              "startDate": "2025-12-08T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "234d25be-38ab-4bfb-813a-825ead8fd08e",
+            "name": "KM Sprint 2",
+            "path": "Black Lagoon\\KM\\KM Sprint 2",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/234d25be-38ab-4bfb-813a-825ead8fd08e"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-01-02T00:00:00Z",
+              "startDate": "2025-12-22T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "7cd59736-9504-4ad0-b028-e5678091e282",
+            "name": "KM Sprint 3",
+            "path": "Black Lagoon\\KM\\KM Sprint 3",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/7cd59736-9504-4ad0-b028-e5678091e282"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-01-16T00:00:00Z",
+              "startDate": "2026-01-05T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "93a7d0f4-4c33-4a07-94d9-7467368ccabc",
+            "name": "FY26-Q2-01",
+            "path": "Black Lagoon\\KM\\FY26-Q2-01",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/93a7d0f4-4c33-4a07-94d9-7467368ccabc"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-01-30T00:00:00Z",
+              "startDate": "2026-01-19T00:00:00Z",
+              "timeFrame": "past"
+            },
+            "id": "37749544-5709-437b-be84-ffd4a1392301",
+            "name": "FY26-Q2-02",
+            "path": "Black Lagoon\\KM\\FY26-Q2-02",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/37749544-5709-437b-be84-ffd4a1392301"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-02-13T00:00:00Z",
+              "startDate": "2026-02-02T00:00:00Z",
+              "timeFrame": "current"
+            },
+            "id": "828981ee-d497-4666-9130-4d247dd36790",
+            "name": "FY26-Q2-03",
+            "path": "Black Lagoon\\KM\\FY26-Q2-03",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/828981ee-d497-4666-9130-4d247dd36790"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-02-27T00:00:00Z",
+              "startDate": "2026-02-16T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "36acc62c-8142-42e6-bb9d-a3960ae81b22",
+            "name": "FY26-Q2-04",
+            "path": "Black Lagoon\\KM\\FY26-Q2-04",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/36acc62c-8142-42e6-bb9d-a3960ae81b22"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-03-13T00:00:00Z",
+              "startDate": "2026-03-02T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "e8c99a58-df91-45bf-853b-fce092b42b66",
+            "name": "FY26-Q2-05",
+            "path": "Black Lagoon\\KM\\FY26-Q2-05",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/e8c99a58-df91-45bf-853b-fce092b42b66"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-03-31T00:00:00Z",
+              "startDate": "2026-03-16T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "4d2c608d-7ea5-47ed-803b-136ae0aab0f6",
+            "name": "FY26-Q2-06",
+            "path": "Black Lagoon\\KM\\FY26-Q2-06",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/4d2c608d-7ea5-47ed-803b-136ae0aab0f6"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-04-17T00:00:00Z",
+              "startDate": "2026-04-01T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "d43e8817-dc41-4c55-acf4-6dadf92f02a2",
+            "name": "FY26-Q3-01",
+            "path": "Black Lagoon\\KM\\FY26-Q3-01",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/d43e8817-dc41-4c55-acf4-6dadf92f02a2"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-05-01T00:00:00Z",
+              "startDate": "2026-04-20T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "5fc21177-4ba1-4e1c-b906-c41b3cbb3502",
+            "name": "FY26-Q3-02",
+            "path": "Black Lagoon\\KM\\FY26-Q3-02",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/5fc21177-4ba1-4e1c-b906-c41b3cbb3502"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-05-15T00:00:00Z",
+              "startDate": "2026-05-04T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "d1c27259-52b4-46e9-ae12-0f28cc7069fe",
+            "name": "FY26-Q3-03",
+            "path": "Black Lagoon\\KM\\FY26-Q3-03",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/d1c27259-52b4-46e9-ae12-0f28cc7069fe"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-05-29T00:00:00Z",
+              "startDate": "2026-05-18T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "233661f6-2824-42b1-888b-10f8e3c89d42",
+            "name": "FY26-Q3-04",
+            "path": "Black Lagoon\\KM\\FY26-Q3-04",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/233661f6-2824-42b1-888b-10f8e3c89d42"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-06-12T00:00:00Z",
+              "startDate": "2026-06-01T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "f7172a15-f849-4c2b-8dd0-1da1b60c1cd1",
+            "name": "FY26-Q3-05",
+            "path": "Black Lagoon\\KM\\FY26-Q3-05",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/f7172a15-f849-4c2b-8dd0-1da1b60c1cd1"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-06-30T00:00:00Z",
+              "startDate": "2026-06-15T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "3bb6cac7-3b56-430b-8803-4559d04d6b16",
+            "name": "FY26-Q3-06",
+            "path": "Black Lagoon\\KM\\FY26-Q3-06",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/3bb6cac7-3b56-430b-8803-4559d04d6b16"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-07-17T00:00:00Z",
+              "startDate": "2026-07-01T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "05503671-d3c4-4fba-80e7-1afa879d566f",
+            "name": "FY26-Q4-01",
+            "path": "Black Lagoon\\KM\\FY26-Q4-01",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/05503671-d3c4-4fba-80e7-1afa879d566f"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-07-31T00:00:00Z",
+              "startDate": "2026-07-20T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "2827ff86-d00d-411e-8d69-eb89a5a87107",
+            "name": "FY26-Q4-02",
+            "path": "Black Lagoon\\KM\\FY26-Q4-02",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/2827ff86-d00d-411e-8d69-eb89a5a87107"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-08-14T00:00:00Z",
+              "startDate": "2026-08-03T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "06c7e25f-4b8d-4ac8-91c2-b2e0809eac40",
+            "name": "FY26-Q4-03",
+            "path": "Black Lagoon\\KM\\FY26-Q4-03",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/06c7e25f-4b8d-4ac8-91c2-b2e0809eac40"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-08-28T00:00:00Z",
+              "startDate": "2026-08-17T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "3ab0d858-64c7-40d6-b284-4d6901ddd61a",
+            "name": "FY26-Q4-04",
+            "path": "Black Lagoon\\KM\\FY26-Q4-04",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/3ab0d858-64c7-40d6-b284-4d6901ddd61a"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-09-11T00:00:00Z",
+              "startDate": "2026-08-31T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "797b626f-ef4a-4d1a-867e-e1039cb3c6a9",
+            "name": "FY26-Q4-05",
+            "path": "Black Lagoon\\KM\\FY26-Q4-05",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/797b626f-ef4a-4d1a-867e-e1039cb3c6a9"
+          },
+          {
+            "attributes": {
+              "finishDate": "2026-09-30T00:00:00Z",
+              "startDate": "2026-09-14T00:00:00Z",
+              "timeFrame": "future"
+            },
+            "id": "8b21fe80-7c48-4fc3-9a8e-413a57419678",
+            "name": "FY26-Q4-06",
+            "path": "Black Lagoon\\KM\\FY26-Q4-06",
+            "url": "https://nswdevsecops.socom.mil/NSW/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/c3484290-7096-457a-8735-4efc433a427f/_apis/work/teamsettings/iterations/8b21fe80-7c48-4fc3-9a8e-413a57419678"
+          }
+        ]
+      }
+    }
+  },
+  "teams_payload": {
+    "count": 3,
+    "value": [
+      {
+        "description": "Data Science and Analytics Team",
+        "id": "737dd9ec-a9fa-41ff-8723-70c60f3c5736",
+        "identityUrl": "https://nswdevsecops.socom.mil/NSW/_apis/Identities/737dd9ec-a9fa-41ff-8723-70c60f3c5736",
+        "name": "Data Science and Analytics",
+        "projectId": "a91ee819-8d82-4e7a-a81c-3f7ed357ab17",
+        "projectName": "Black Lagoon",
+        "url": "https://nswdevsecops.socom.mil/NSW/_apis/projects/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/teams/737dd9ec-a9fa-41ff-8723-70c60f3c5736"
+      },
+      {
+        "description": "Digital Transformation Team",
+        "id": "154af80d-9194-484b-8b47-bde168a596f0",
+        "identityUrl": "https://nswdevsecops.socom.mil/NSW/_apis/Identities/154af80d-9194-484b-8b47-bde168a596f0",
+        "name": "Digital Transformation",
+        "projectId": "a91ee819-8d82-4e7a-a81c-3f7ed357ab17",
+        "projectName": "Black Lagoon",
+        "url": "https://nswdevsecops.socom.mil/NSW/_apis/projects/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/teams/154af80d-9194-484b-8b47-bde168a596f0"
+      },
+      {
+        "description": "Knowledge Management Team",
+        "id": "c3484290-7096-457a-8735-4efc433a427f",
+        "identityUrl": "https://nswdevsecops.socom.mil/NSW/_apis/Identities/c3484290-7096-457a-8735-4efc433a427f",
+        "name": "KM",
+        "projectId": "a91ee819-8d82-4e7a-a81c-3f7ed357ab17",
+        "projectName": "Black Lagoon",
+        "url": "https://nswdevsecops.socom.mil/NSW/_apis/projects/a91ee819-8d82-4e7a-a81c-3f7ed357ab17/teams/c3484290-7096-457a-8735-4efc433a427f"
+      }
+    ]
+  }
+}
