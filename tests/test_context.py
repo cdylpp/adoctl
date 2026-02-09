@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from adoctl.config.context import CLIContext, load_cli_context, save_cli_context
+from adoctl.config.context import CLIContext, load_cli_context, load_local_project_defaults, save_cli_context
 
 
 class TestCLIContext(unittest.TestCase):
@@ -33,6 +33,27 @@ class TestCLIContext(unittest.TestCase):
             with path.open("w", encoding="utf-8") as f:
                 yaml.safe_dump(["not", "a", "mapping"], f)
             self.assertEqual(load_cli_context(path=path), CLIContext())
+
+    def test_load_applies_project_defaults_when_context_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "context.yaml"
+            defaults_path = Path(tmpdir) / "project_defaults.yaml"
+            with defaults_path.open("w", encoding="utf-8") as f:
+                yaml.safe_dump(
+                    {
+                        "schema_version": "1.0",
+                        "project": "Black Lagoon",
+                        "project_id": "a91ee819-8d82-4e7a-a81c-3f7ed357ab17",
+                    },
+                    f,
+                    sort_keys=False,
+                )
+
+            context = load_cli_context(path=path)
+            defaults = load_local_project_defaults(path=defaults_path)
+            self.assertEqual(context.project, "Black Lagoon")
+            self.assertEqual(defaults.project, "Black Lagoon")
+            self.assertEqual(defaults.project_id, "a91ee819-8d82-4e7a-a81c-3f7ed357ab17")
 
 
 if __name__ == "__main__":

@@ -29,7 +29,7 @@ class TestPlanningSync(unittest.TestCase):
 
         def fake_get(_: ADOConfig, url: str, params=None):  # noqa: ANN001
             normalized = url.lower()
-            if normalized.endswith("/_apis/teams"):
+            if normalized.endswith("/_apis/projects/project-123/teams"):
                 return {
                     "value": [
                         {"id": "t1", "name": "DataScience"},
@@ -89,6 +89,7 @@ class TestPlanningSync(unittest.TestCase):
             cfg = ADOConfig(
                 org_url="https://dev.azure.com/example-org",
                 project=project_name,
+                project_id="project-123",
                 pat="test-pat",
                 api_version="6.0",
             )

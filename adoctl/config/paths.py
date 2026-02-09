@@ -25,3 +25,7 @@ def local_config_dir() -> Path:
 
 def cli_context_path() -> Path:
     return local_config_dir() / "context.yaml"
+
+
+def local_project_defaults_path() -> Path:
+    return local_config_dir() / "project_defaults.yaml"

@@ -13,6 +13,21 @@ from adoctl.util.yaml_emit import render_yaml_with_header
 from adoctl.util.url import join_url
 
 
+def _resolve_project_id(cfg: ADOConfig) -> str:
+    if isinstance(cfg.project_id, str) and cfg.project_id.strip():
+        return cfg.project_id.strip()
+    if not cfg.project:
+        raise ValueError("cfg.project is required to resolve project id.")
+    project_url = join_url(cfg.org_url, "_apis", "projects", cfg.project)
+    project_payload = ado_get(cfg, project_url)
+    project_id = project_payload.get("id")
+    if not isinstance(project_id, str) or not project_id.strip():
+        raise ValueError(
+            f"Unable to resolve project id for '{cfg.project}' from ADO projects endpoint."
+        )
+    return project_id.strip()
+
+
 def _flatten_classification_paths(node: Dict[str, Any]) -> List[str]:
     paths: List[str] = []
 
@@ -352,7 +367,8 @@ def sync_ado_to_yaml(
     if "teams" in requested or "planning" in requested:
         if not cfg.project:
             raise ValueError("cfg.project is required to sync teams and planning metadata.")
-        teams_url = join_url(cfg.org_url, cfg.project, "_apis", "teams")
+        project_id = _resolve_project_id(cfg)
+        teams_url = join_url(cfg.org_url, "_apis", "projects", project_id, "teams")
         teams_payload = ado_get(cfg, teams_url)
         raw_teams = teams_payload.get("value", [])
         if isinstance(raw_teams, list):

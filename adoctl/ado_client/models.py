@@ -9,4 +9,5 @@ class ADOConfig:
     org_url: str
     pat: str
     project: Optional[str] = None
+    project_id: Optional[str] = None
     api_version: str = "6.0"

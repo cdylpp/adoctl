@@ -53,6 +53,7 @@ Layered configuration (do not mix responsibilities between layers).
   - `_sync_state.yaml` — sync metadata (timestamps, version, sections).
 - `config/local/` — local operator context for CLI UX.
   - `context.yaml` — selected org/project/team/current iteration used by the home screen and defaults.
+  - `project_defaults.yaml` — default project + project_id used when context/CLI args omit them.
 
 ## Configuration Lineage and Ownership
 
@@ -66,6 +67,7 @@ Edit policy and local context; do not hand-edit generated artifacts.
   - `config/policy/standards.yaml`
   - `config/policy/kr_taxonomy.yaml`
   - `config/local/context.yaml` (optional; CLI may overwrite)
+  - `config/local/project_defaults.yaml`
 - Do not edit (machine-generated):
   - `config/generated/wit_contract.yaml`
   - `config/generated/wit_contracts/*.yaml`

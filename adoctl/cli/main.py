@@ -10,7 +10,7 @@ from adoctl.ado_client.models import ADOConfig
 from adoctl.cli.home import run_home_screen_loop
 from adoctl.config.contract_export import export_agent_contract
 from adoctl.config.contract_lint import lint_contract
-from adoctl.config.context import CLIContext, load_cli_context, save_cli_context
+from adoctl.config.context import CLIContext, load_cli_context, load_local_project_defaults, save_cli_context
 from adoctl.config.wiki_policy_bootstrap import bootstrap_field_policy_from_docs
 from adoctl.outbox.validate import validate_outbox
 from adoctl.outbox.write import write_outbox
@@ -256,8 +256,12 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if args.command == "sync":
         sections = _sync_sections(args)
+        local_project_defaults = load_local_project_defaults()
         org_url = args.org_url or context.org_url
-        project = args.project or context.project
+        project = args.project or context.project or local_project_defaults.project
+        project_id = None
+        if project and local_project_defaults.project and project == local_project_defaults.project:
+            project_id = local_project_defaults.project_id
 
         if not org_url:
             parser.error("Missing org URL. Pass --org-url or set it via `adoctl home` / `adoctl context set --org-url`.")
@@ -267,7 +271,13 @@ def main(argv: Optional[List[str]] = None) -> int:
             )
 
         pat = _load_pat_from_env(args.pat_env)
-        cfg = ADOConfig(org_url=org_url, project=project, pat=pat, api_version=args.api_version)
+        cfg = ADOConfig(
+            org_url=org_url,
+            project=project,
+            project_id=project_id,
+            pat=pat,
+            api_version=args.api_version,
+        )
         sync_ado_to_yaml(cfg=cfg, out_dir=args.out_dir, wit_names=args.wit, sections=sections)
         save_cli_context(
             _merge_context(
@@ -367,7 +377,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             parser.error("Provide a bundle path or pass --all-validated.")
 
         org_url = args.org_url or context.org_url
-        project = args.project or context.project
+        local_project_defaults = load_local_project_defaults()
+        project = args.project or context.project or local_project_defaults.project
         if not org_url:
             parser.error("Missing org URL. Pass --org-url or set it via `adoctl context set --org-url`.")
         if not project:
