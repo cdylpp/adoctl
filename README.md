@@ -154,6 +154,7 @@ Export effective agent contract:
   - policy mappings (`config/policy/wit_map.yaml`, `config/policy/field_map.yaml`)
   - field policy (`config/policy/field_policy.yaml`)
   - generated ADO metadata (`config/generated/wit_contract.yaml`)
+  - planning semantics (`config/generated/planning_context.yaml`) for teams, paths, Objectives, and Key Results
 - Precedence rule:
   - any canonical field mapped to an ADO-required field in `wit_contract.yaml` is promoted into `field_policy.yaml.required_fields`.
   - `field_policy.yaml` can still be stricter by requiring additional canonical fields.
@@ -214,5 +215,9 @@ Bootstrap policy metadata from team wiki docs (one-time seed):
 
 4) Replicate planning semantics into external instruction set:
 
-- Copy generated planning context after sync:
-  - `cp config/generated/planning_context.yaml instruction_set/contracts/planning_context.yaml`
+- Use end-to-end instruction-set export:
+  - `python -m adoctl instruction-set export --out-dir instruction_set --policy-dir config/policy --generated-dir config/generated --schema schema/bundle.schema.json`
+- This command runs `contract export` (unless skipped) and refreshes:
+  - `instruction_set/contracts/agent_contract.yaml`
+  - `instruction_set/contracts/bundle.schema.json`
+  - `instruction_set/contracts/planning_context.yaml`

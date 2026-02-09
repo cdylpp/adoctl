@@ -8,6 +8,7 @@ These are the operational efficiency constraints that keep the system stable.
 2. Sync only necessary metadata sections unless full refresh is required.
 3. Keep the exported agent contract compact and stable.
 4. Sync planning context (`--planning-only`) to refresh team-scoped paths and Objective/Key Result context without pulling unrelated metadata.
+5. Use `python -m adoctl instruction-set export ...` to refresh all instruction-set contracts in one step instead of manual copy operations.
 
 ## Practical Guidance For External Agents
 

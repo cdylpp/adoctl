@@ -11,6 +11,7 @@ from adoctl.cli.home import run_home_screen_loop
 from adoctl.config.contract_export import export_agent_contract
 from adoctl.config.contract_lint import lint_contract
 from adoctl.config.context import CLIContext, load_cli_context, load_local_project_defaults, save_cli_context
+from adoctl.config.instruction_set_export import export_instruction_set
 from adoctl.config.wiki_policy_bootstrap import bootstrap_field_policy_from_docs
 from adoctl.outbox.validate import validate_outbox
 from adoctl.outbox.write import write_outbox
@@ -146,6 +147,41 @@ def _build_parser() -> argparse.ArgumentParser:
         "--out",
         default="config/policy/field_policy.yaml",
         help="Field policy YAML output path",
+    )
+
+    instruction_set = subparsers.add_parser(
+        "instruction-set",
+        help="Export portable instruction-set contracts for external agents",
+    )
+    instruction_set_sub = instruction_set.add_subparsers(dest="instruction_set_cmd", required=True)
+    instruction_set_export = instruction_set_sub.add_parser(
+        "export",
+        help="Refresh instruction_set/contracts from generated contract, planning context, and schema",
+    )
+    instruction_set_export.add_argument(
+        "--out-dir",
+        default="instruction_set",
+        help="Instruction-set root directory",
+    )
+    instruction_set_export.add_argument(
+        "--policy-dir",
+        default="config/policy",
+        help="Policy config directory",
+    )
+    instruction_set_export.add_argument(
+        "--generated-dir",
+        default="config/generated",
+        help="Generated config directory",
+    )
+    instruction_set_export.add_argument(
+        "--schema",
+        default="schema/bundle.schema.json",
+        help="Bundle JSON schema path",
+    )
+    instruction_set_export.add_argument(
+        "--skip-contract-export",
+        action="store_true",
+        help="Do not run contract export before copying artifacts",
     )
 
     outbox = subparsers.add_parser("outbox", help="Outbox commands")
@@ -336,6 +372,29 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"Field policy bootstrapped: {result['output_path']}")
         print(f"Docs processed: {result['source_count']}")
         print(f"WIT metadata captured: {result['work_item_count']}")
+        return 0
+
+    if args.command == "instruction-set" and args.instruction_set_cmd == "export":
+        try:
+            result = export_instruction_set(
+                instruction_set_dir=args.out_dir,
+                policy_dir=Path(args.policy_dir),
+                generated_dir=Path(args.generated_dir),
+                schema_path=args.schema,
+                run_contract_export=not args.skip_contract_export,
+            )
+        except Exception as exc:  # noqa: BLE001 - CLI surface should return actionable errors
+            print(f"instruction-set export: {exc}", file=sys.stderr)
+            return 2
+
+        contract_export_result = result.get("contract_export")
+        if contract_export_result is not None:
+            strict_status = "ready" if contract_export_result["strict_ready"] else "not ready"
+            print(f"Contract export status: {strict_status}")
+            print(f"Contract output: {contract_export_result['output_path']}")
+        print(f"Instruction set contracts refreshed: {result['contracts_dir']}")
+        for copied_file in result["copied_files"]:
+            print(f"Copied {copied_file['source']} -> {copied_file['destination']}")
         return 0
 
     if args.command == "outbox" and args.outbox_cmd == "validate":

@@ -269,6 +269,95 @@ class TestContractConfig(unittest.TestCase):
             self.assertIn("work_item_standards", snapshot["rules"]["standards"])
             self.assertIn("Feature", snapshot["rules"]["standards"]["work_item_standards"])
             self.assertIn("UserStory", snapshot["rules"]["standards"]["work_item_standards"])
+            self.assertFalse(snapshot["planning"]["available"])
+
+    def test_export_agent_contract_includes_planning_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy_dir = root / "policy"
+            generated_dir = root / "generated"
+            out_path = root / "agent_contract.yaml"
+
+            _write_yaml(
+                policy_dir / "wit_map.yaml",
+                {
+                    "schema_version": "1.0",
+                    "canonical_to_ado": {"Feature": "Feature", "UserStory": "User Story"},
+                },
+            )
+            _write_yaml(
+                policy_dir / "field_map.yaml",
+                {
+                    "schema_version": "1.0",
+                    "canonical_to_ado": {
+                        "title": {"reference_name": "System.Title", "applies_to": ["Feature", "UserStory"]},
+                    },
+                },
+            )
+            _write_yaml(
+                policy_dir / "link_policy.yaml",
+                {
+                    "schema_version": "1.0",
+                    "allowed_link_types": ["parent-child"],
+                    "max_depth": 2,
+                    "forbid_double_nesting": ["Feature", "UserStory"],
+                },
+            )
+            _write_yaml(
+                policy_dir / "standards.yaml",
+                {
+                    "schema_version": "1.0",
+                    "required_tags": [],
+                    "work_item_standards": {},
+                },
+            )
+            _write_yaml(
+                policy_dir / "field_policy.yaml",
+                {
+                    "schema_version": "1.0",
+                    "agent_contract_export": {"include_work_item_types": ["Feature", "UserStory"]},
+                    "allowed_fields": {},
+                    "required_fields": {},
+                    "description_required_sections": {},
+                    "description_optional_sections": {},
+                },
+            )
+            _write_yaml(
+                generated_dir / "wit_contract.yaml",
+                {
+                    "schema_version": "1.0",
+                    "work_item_types": {
+                        "Feature": {"fields": [{"reference_name": "System.Title"}]},
+                        "User Story": {"fields": [{"reference_name": "System.Title"}]},
+                    },
+                },
+            )
+            _write_yaml(
+                generated_dir / "planning_context.yaml",
+                {
+                    "schema_version": "1.0",
+                    "project": "Black Lagoon",
+                    "core_team": "Black Lagoon",
+                    "project_backlog_defaults": {"area_path": "Black Lagoon", "iteration_path": "Black Lagoon"},
+                    "teams": [{"name": "DataScience", "default_area_path": "Black Lagoon\\DataScience"}],
+                    "objectives": [{"id": 1, "title": "Obj 1"}],
+                    "key_results": [{"id": 2, "title": "KR 1", "parent_objective_id": 1}],
+                    "orphan_key_results": [],
+                },
+            )
+
+            export_agent_contract(
+                out_path=str(out_path),
+                policy_dir=policy_dir,
+                generated_dir=generated_dir,
+            )
+            snapshot = yaml.safe_load(out_path.read_text(encoding="utf-8"))
+            self.assertTrue(snapshot["planning"]["available"])
+            self.assertEqual(snapshot["planning"]["project"], "Black Lagoon")
+            self.assertEqual(snapshot["planning"]["core_team"], "Black Lagoon")
+            self.assertEqual(len(snapshot["planning"]["teams"]), 1)
+            self.assertEqual(len(snapshot["planning"]["objectives"]), 1)
+            self.assertEqual(len(snapshot["planning"]["key_results"]), 1)
 
     def test_export_syncs_field_policy_required_with_generated_precedence(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

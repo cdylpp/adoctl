@@ -29,9 +29,5 @@ Use this packet for one job only: convert sprint goals into a canonical JSON bun
 
 Run these commands, then resend this folder:
 
-1. `python -m adoctl contract export --out config/generated/agent_contract.yaml`
-2. `python -m adoctl sync --org-url "https://dev.azure.com/<ORG>" --project "<PROJECT>" --planning-only`
-3. Copy updated artifacts:
-   - `config/generated/agent_contract.yaml -> instruction_set/contracts/agent_contract.yaml`
-   - `schema/bundle.schema.json -> instruction_set/contracts/bundle.schema.json`
-   - `config/generated/planning_context.yaml -> instruction_set/contracts/planning_context.yaml`
+1. `python -m adoctl sync --org-url "https://dev.azure.com/<ORG>" --project "<PROJECT>" --planning-only`
+2. `python -m adoctl instruction-set export --out-dir instruction_set --policy-dir config/policy --generated-dir config/generated --schema schema/bundle.schema.json`

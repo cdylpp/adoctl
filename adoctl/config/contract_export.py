@@ -4,6 +4,8 @@ import datetime as dt
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import yaml
+
 from adoctl.config.contract_loader import (
     EffectiveContractConfig,
     FieldMapConfig,
@@ -12,7 +14,7 @@ from adoctl.config.contract_loader import (
     load_effective_contract,
     save_field_policy,
 )
-from adoctl.config.paths import policy_config_dir
+from adoctl.config.paths import generated_config_dir, policy_config_dir
 from adoctl.util.fs import atomic_write_text, ensure_dir
 from adoctl.util.yaml_emit import render_yaml_with_header
 
@@ -38,6 +40,40 @@ def _canonical_field_map(field_map: FieldMapConfig) -> Dict[str, str]:
     return {
         key: field_map.canonical_to_ado[key].reference_name
         for key in sorted(field_map.canonical_to_ado.keys())
+    }
+
+
+def _load_planning_context_payload(generated_dir: Optional[Path]) -> Dict[str, Any]:
+    resolved_generated_dir = generated_dir or generated_config_dir()
+    planning_path = resolved_generated_dir / "planning_context.yaml"
+    if not planning_path.exists():
+        return {
+            "available": False,
+            "source_path": str(planning_path),
+            "project": None,
+            "core_team": None,
+            "project_backlog_defaults": {},
+            "teams": [],
+            "objectives": [],
+            "key_results": [],
+            "orphan_key_results": [],
+        }
+
+    with planning_path.open("r", encoding="utf-8") as f:
+        payload = yaml.safe_load(f) or {}
+    if not isinstance(payload, dict):
+        raise ValueError(f"Planning context must be a YAML mapping: {planning_path}")
+
+    return {
+        "available": True,
+        "source_path": str(planning_path),
+        "project": payload.get("project"),
+        "core_team": payload.get("core_team"),
+        "project_backlog_defaults": payload.get("project_backlog_defaults") or {},
+        "teams": payload.get("teams") or [],
+        "objectives": payload.get("objectives") or [],
+        "key_results": payload.get("key_results") or [],
+        "orphan_key_results": payload.get("orphan_key_results") or [],
     }
 
 
@@ -75,7 +111,10 @@ def _sync_field_policy_required_fields(config: EffectiveContractConfig, field_po
     return True
 
 
-def build_agent_contract_snapshot(config: EffectiveContractConfig) -> Dict[str, Any]:
+def build_agent_contract_snapshot(
+    config: EffectiveContractConfig,
+    planning_context: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     coverage_issues = config.validate_mapping_coverage()
 
     export_types = set(config.agent_contract_export_types())
@@ -123,6 +162,17 @@ def build_agent_contract_snapshot(config: EffectiveContractConfig) -> Dict[str, 
             "field_map": _canonical_field_map(config.field_map),
         },
         "ado_capabilities": ado_capabilities,
+        "planning": planning_context or {
+            "available": False,
+            "source_path": None,
+            "project": None,
+            "core_team": None,
+            "project_backlog_defaults": {},
+            "teams": [],
+            "objectives": [],
+            "key_results": [],
+            "orphan_key_results": [],
+        },
         "field_policy": {
             "allowed_fields": {
                 canonical_type: sorted(list(field_keys))
@@ -184,7 +234,8 @@ def export_agent_contract(
     if field_policy_updated:
         contract = load_effective_contract(policy_dir=resolved_policy_dir, generated_dir=generated_dir)
 
-    snapshot = build_agent_contract_snapshot(contract)
+    planning_context = _load_planning_context_payload(generated_dir=generated_dir)
+    snapshot = build_agent_contract_snapshot(contract, planning_context=planning_context)
     destination = Path(out_path)
     ensure_dir(destination.parent)
     atomic_write_text(
