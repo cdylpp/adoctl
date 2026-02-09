@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
-from jsonschema import Draft202012Validator
+from jsonschema import ValidationError, validate as jsonschema_validate
 import yaml
 
 from adoctl.config.contract_loader import EffectiveContractConfig, load_effective_contract
@@ -103,8 +103,9 @@ def _load_path_list(path_file: Path, key: str) -> Tuple[Optional[Set[str]], Opti
 
 def _validate_schema_stage(bundle_payload: Dict[str, Any], schema_payload: Dict[str, Any]) -> List[Dict[str, str]]:
     issues: List[Dict[str, str]] = []
-    validator = Draft202012Validator(schema_payload)
-    for error in sorted(validator.iter_errors(bundle_payload), key=lambda err: list(err.path)):
+    try:
+        jsonschema_validate(instance=bundle_payload, schema=schema_payload)
+    except ValidationError as error:
         _add_issue(
             issues=issues,
             stage="schema",
