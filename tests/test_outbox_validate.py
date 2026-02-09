@@ -123,6 +123,19 @@ def _base_generated(generated_dir: Path) -> None:
     )
     _write_yaml(generated_dir / "paths_area.yaml", {"area_paths": ["Project\\Team"]})
     _write_yaml(generated_dir / "paths_iteration.yaml", {"iteration_paths": ["Project\\Sprint1"]})
+    _write_yaml(
+        generated_dir / "planning_context.yaml",
+        {
+            "schema_version": "1.0",
+            "teams": [
+                {
+                    "name": "TeamA",
+                    "allowed_area_paths": ["Project\\Team"],
+                    "allowed_iteration_paths": ["Project\\Sprint1"],
+                }
+            ],
+        },
+    )
 
 
 def _valid_bundle_payload() -> dict:
@@ -261,6 +274,39 @@ class TestOutboxValidate(unittest.TestCase):
             failed_report = result["results"][0]["report"]
             issue_codes = [issue["code"] for issue in failed_report["issues"]]
             self.assertIn("UNKNOWN_AREA_PATH", issue_codes)
+
+    def test_metadata_failure_team_scoped_path_not_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy_dir = root / "policy"
+            generated_dir = root / "generated"
+            outbox_root = root / "outbox"
+            ready_dir = outbox_root / "ready"
+
+            _base_policy(policy_dir)
+            _base_generated(generated_dir)
+            _write_yaml(generated_dir / "paths_area.yaml", {"area_paths": ["Project\\Team", "Project\\Shared"]})
+
+            bad_team_bundle = _valid_bundle_payload()
+            bad_team_bundle["bundle_id"] = "bundle-team-scope-fail"
+            bad_team_bundle["context"]["team"] = "TeamA"
+            bad_team_bundle["context"]["default_area_path"] = "Project\\Shared"
+            bundle_path = ready_dir / "team_scope.json"
+            _write_json(bundle_path, bad_team_bundle)
+
+            result = validate_outbox(
+                bundle=str(bundle_path),
+                validate_all=False,
+                policy_dir=policy_dir,
+                generated_dir=generated_dir,
+                schema_path=Path("schema/bundle.schema.json"),
+                outbox_root=outbox_root,
+            )
+
+            self.assertEqual(result["failed_count"], 1)
+            failed_report = result["results"][0]["report"]
+            issue_codes = [issue["code"] for issue in failed_report["issues"]]
+            self.assertIn("TEAM_AREA_PATH_NOT_ALLOWED", issue_codes)
 
 
 if __name__ == "__main__":

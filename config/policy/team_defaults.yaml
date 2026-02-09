@@ -1,0 +1,15 @@
+# USER-MANAGED POLICY FILE. SAFE TO EDIT.
+# Purpose: override team-specific backlog defaults when team names and backlog nodes differ.
+schema_version: "1.0"
+
+# Keys are team names exactly as they appear in ADO team settings.
+team_defaults:
+  Data Science and Analytics:
+    # Iteration backlog uses abbreviated team node in this org.
+    iteration_default: Black Lagoon\DSA
+    iteration_prefixes:
+      - Black Lagoon\DSA
+    # Area backlog defaults to the full team path; omit to use synced team settings.
+    area_default: Black Lagoon\Data Science and Analytics
+    area_prefixes:
+      - Black Lagoon\Data Science and Analytics

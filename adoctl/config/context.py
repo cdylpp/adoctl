@@ -17,6 +17,7 @@ class CLIContext:
     project: Optional[str] = None
     team: Optional[str] = None
     current_iteration: Optional[str] = None
+    owner_display_name: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,7 @@ def load_cli_context(path: Optional[Path] = None) -> CLIContext:
         project=_normalize_optional_string(data.get("project")) or defaults.project,
         team=_normalize_optional_string(data.get("team")),
         current_iteration=_normalize_optional_string(data.get("current_iteration")),
+        owner_display_name=_normalize_optional_string(data.get("owner_display_name")),
     )
 
 
@@ -80,6 +82,7 @@ def save_cli_context(context: CLIContext, path: Optional[Path] = None) -> None:
         "project": context.project,
         "team": context.team,
         "current_iteration": context.current_iteration,
+        "owner_display_name": context.owner_display_name,
     }
     atomic_write_text(
         context_path,

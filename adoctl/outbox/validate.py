@@ -101,6 +101,29 @@ def _load_path_list(path_file: Path, key: str) -> Tuple[Optional[Set[str]], Opti
     return _normalize_string_set(values), None
 
 
+def _load_planning_context(path_file: Path) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    if not path_file.exists():
+        return None, f"Missing generated metadata file: {path_file}"
+    with path_file.open("r", encoding="utf-8") as f:
+        payload = yaml.safe_load(f) or {}
+    if not isinstance(payload, dict):
+        return None, f"Invalid YAML object in generated metadata file: {path_file}"
+    return payload, None
+
+
+def _planning_team_entry(planning_context: Dict[str, Any], team_name: str) -> Optional[Dict[str, Any]]:
+    teams = planning_context.get("teams", [])
+    if not isinstance(teams, list):
+        return None
+    for item in teams:
+        if not isinstance(item, dict):
+            continue
+        candidate_name = _as_string(item.get("name"))
+        if candidate_name and candidate_name.lower() == team_name.lower():
+            return item
+    return None
+
+
 def _validate_schema_stage(bundle_payload: Dict[str, Any], schema_payload: Dict[str, Any]) -> List[Dict[str, str]]:
     issues: List[Dict[str, str]] = []
     try:
@@ -305,6 +328,8 @@ def _metadata_stage(
     iteration_paths: Optional[Set[str]],
     area_paths_error: Optional[str],
     iteration_paths_error: Optional[str],
+    planning_context: Optional[Dict[str, Any]],
+    planning_context_error: Optional[str],
 ) -> List[Dict[str, str]]:
     issues: List[Dict[str, str]] = []
     work_items_raw = bundle_payload.get("work_items", [])
@@ -330,6 +355,36 @@ def _metadata_stage(
             path="config/generated/paths_iteration.yaml",
             message=iteration_paths_error,
             suggestion="Run `adoctl sync --paths` to generate iteration paths metadata.",
+        )
+    context_team = _as_string(context.get("team")) if isinstance(context, dict) else None
+    if planning_context_error and context_team:
+        _add_issue(
+            issues=issues,
+            stage="metadata",
+            code="PLANNING_CONTEXT_METADATA_MISSING",
+            path="config/generated/planning_context.yaml",
+            message=planning_context_error,
+            suggestion="Run `adoctl sync --planning-only` to generate planning context metadata.",
+        )
+
+    team_entry = (
+        _planning_team_entry(planning_context, context_team)
+        if (planning_context is not None and context_team)
+        else None
+    )
+    team_allowed_area_paths = _normalize_string_set(team_entry.get("allowed_area_paths", [])) if isinstance(team_entry, dict) else None
+    team_allowed_iteration_paths = (
+        _normalize_string_set(team_entry.get("allowed_iteration_paths", [])) if isinstance(team_entry, dict) else None
+    )
+
+    if context_team and planning_context is not None and team_entry is None:
+        _add_issue(
+            issues=issues,
+            stage="metadata",
+            code="UNKNOWN_TEAM_CONTEXT",
+            path="$.context.team",
+            message=f"Context team '{context_team}' is not present in planning context metadata.",
+            suggestion="Use a known team name from config/generated/planning_context.yaml.",
         )
 
     for index, item in enumerate(work_items):
@@ -453,6 +508,72 @@ def _metadata_stage(
                 suggestion="Use a known path from config/generated/paths_iteration.yaml.",
             )
 
+        if (
+            resolved_area
+            and team_allowed_area_paths is not None
+            and _normalize_path(resolved_area) not in team_allowed_area_paths
+        ):
+            _add_issue(
+                issues=issues,
+                stage="metadata",
+                code="TEAM_AREA_PATH_NOT_ALLOWED",
+                path=f"{item_path}.fields.area_path",
+                message=(
+                    f"Resolved area path '{resolved_area}' is not allowed for context.team='{context_team}'."
+                ),
+                suggestion="Use a team-scoped area path from config/generated/planning_context.yaml.",
+            )
+
+        if (
+            resolved_iteration
+            and team_allowed_iteration_paths is not None
+            and _normalize_path(resolved_iteration) not in team_allowed_iteration_paths
+        ):
+            _add_issue(
+                issues=issues,
+                stage="metadata",
+                code="TEAM_ITERATION_PATH_NOT_ALLOWED",
+                path=f"{item_path}.fields.iteration_path",
+                message=(
+                    f"Resolved iteration path '{resolved_iteration}' is not allowed for context.team='{context_team}'."
+                ),
+                suggestion="Use a team-scoped iteration path from config/generated/planning_context.yaml.",
+            )
+
+    if isinstance(context, dict) and context_team and team_entry is not None:
+        context_default_area = _as_string(context.get("default_area_path"))
+        context_default_iteration = _as_string(context.get("default_iteration_path"))
+        if (
+            context_default_area
+            and team_allowed_area_paths is not None
+            and _normalize_path(context_default_area) not in team_allowed_area_paths
+        ):
+            _add_issue(
+                issues=issues,
+                stage="metadata",
+                code="CONTEXT_DEFAULT_AREA_NOT_ALLOWED_FOR_TEAM",
+                path="$.context.default_area_path",
+                message=(
+                    f"context.default_area_path '{context_default_area}' is not allowed for context.team='{context_team}'."
+                ),
+                suggestion="Set context.default_area_path to a team-allowed path from planning context.",
+            )
+        if (
+            context_default_iteration
+            and team_allowed_iteration_paths is not None
+            and _normalize_path(context_default_iteration) not in team_allowed_iteration_paths
+        ):
+            _add_issue(
+                issues=issues,
+                stage="metadata",
+                code="CONTEXT_DEFAULT_ITERATION_NOT_ALLOWED_FOR_TEAM",
+                path="$.context.default_iteration_path",
+                message=(
+                    f"context.default_iteration_path '{context_default_iteration}' is not allowed for context.team='{context_team}'."
+                ),
+                suggestion="Set context.default_iteration_path to a team-allowed path from planning context.",
+            )
+
     return issues
 
 
@@ -504,6 +625,8 @@ def _validate_single_bundle(
     iteration_paths: Optional[Set[str]],
     area_paths_error: Optional[str],
     iteration_paths_error: Optional[str],
+    planning_context: Optional[Dict[str, Any]],
+    planning_context_error: Optional[str],
 ) -> Dict[str, Any]:
     schema_issues: List[Dict[str, str]] = []
     policy_issues: List[Dict[str, str]] = []
@@ -537,6 +660,8 @@ def _validate_single_bundle(
             iteration_paths=iteration_paths,
             area_paths_error=area_paths_error,
             iteration_paths_error=iteration_paths_error,
+            planning_context=planning_context,
+            planning_context_error=planning_context_error,
         )
     return _build_report(bundle_path, bundle_payload, schema_issues, policy_issues, metadata_issues)
 
@@ -617,6 +742,7 @@ def validate_outbox(
     iteration_paths, iteration_paths_error = _load_path_list(
         Path(generated_root) / "paths_iteration.yaml", "iteration_paths"
     )
+    planning_context, planning_context_error = _load_planning_context(Path(generated_root) / "planning_context.yaml")
 
     results: List[Dict[str, Any]] = []
     passed_count = 0
@@ -631,6 +757,8 @@ def validate_outbox(
             iteration_paths=iteration_paths,
             area_paths_error=area_paths_error,
             iteration_paths_error=iteration_paths_error,
+            planning_context=planning_context,
+            planning_context_error=planning_context_error,
         )
         passed = report["summary"]["result"] == "passed"
         managed_by_outbox = _is_under_directory(bundle_path, ready_dir)

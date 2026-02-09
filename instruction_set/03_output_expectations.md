@@ -27,6 +27,7 @@ Do not return:
 3. Descriptions:
    - include constraints and relevant edge cases
    - avoid implementation-level detail unless needed for acceptance
+   - markdown/plain-text description is acceptable; writer converts it to ADO-compatible HTML
 
 ## Blocked Response Rules
 

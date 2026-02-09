@@ -103,11 +103,30 @@ Exit criteria:
   - generated configs present
   - policy files present
   - contract export up to date
+- Production hardening from first real write run:
+  - [X] Owner assignment hardening (`System.AssignedTo`)
+    - [X] Before writing, list all the members for the current project and team. Let the user select the display name. Use this value as the owner when writing.
+    - [X] Add setting the user display name to the `adoctl home` menu.
+    - [X] If writing values because AssignedTo value is incorrect default to null and raise this to the user as complete but set to null.
+  - [X] Team backlog defaults hardening (area default != iteration default)
+    - Split default resolution logic so area and iteration defaults are computed independently per team.
+    - Derive team default iteration backlog from team iteration settings; derive area default from team area settings.
+    - Add optional policy override map in policy. Allow the user to set Iteration default for each of the current teams.
+    - Add validation rule: resolved defaults must be present in generated paths and team-scoped allowed paths.
+  - [X] Description format hardening (markdown vs ADO HTML)
+    - Add writer-side markdown -> HTML transformation for `description` before writing `System.Description`.
+    - Keep canonical bundle unchanged (still markdown-capable), transform only at write boundary.
+    - Ensure acceptance criteria fallback sections added to description are emitted as valid HTML blocks.
+    - Add tests for markdown inputs (lists, headings, links, plain text) to verify deterministic HTML output.
+    - Update instruction set and README to declare canonical text format and writer transformation behavior.
 
 Exit criteria:
 
 - CI runs unit tests and catches regressions.
 - Operator gets clear diagnostics for missing/stale config.
+- Owner assignment succeeds with policy-compliant display names in production writes.
+- Team-default area/iteration resolution works for mixed naming patterns (full team names vs abbreviations).
+- ADO descriptions render correctly as HTML without requiring agents to author raw HTML.
 
 ## Open Questions (Need Decisions Before Writer Is “Production Safe”)
 
@@ -116,6 +135,8 @@ Exit criteria:
 - [X] Tagging conventions: not required.
 - [X] Auth constraints: PAT-only for MVP is assumed; storage policy env var only.
 - [ ] Rollback policy: if partial writes occur, is cleanup allowed or do we only stop and audit?
+- [X] Owner identity source of truth: policy controls mode (`display_name` default; optional `unique_name` or `either`) with deterministic matching.
+- [X] Markdown strategy: writer-only transform (default); agents continue to emit canonical text/markdown descriptions.
 
 ## Efficiency Notes (Pragmatic)
 

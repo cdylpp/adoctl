@@ -36,7 +36,6 @@ required_fields:
     - area_path
     - description
     - iteration_path
-    - owner
     - priority
     - state
     - title
@@ -46,7 +45,6 @@ required_fields:
     - area_path
     - description
     - iteration_path
-    - owner
     - priority
     - state
     - story_points
@@ -63,3 +61,6 @@ description_required_sections:
 description_optional_sections:
   Feature: []
   UserStory: []
+
+owner_identity:
+  format: display_name

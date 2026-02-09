@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from adoctl.ado_client.models import ADOConfig
-from adoctl.cli.home import run_home_screen_loop
+from adoctl.cli.home import load_generated_owner_display_names, run_home_screen_loop
 from adoctl.config.contract_export import export_agent_contract
 from adoctl.config.contract_lint import lint_contract
 from adoctl.config.context import CLIContext, load_cli_context, load_local_project_defaults, save_cli_context
@@ -78,6 +78,7 @@ def _build_parser() -> argparse.ArgumentParser:
     context_set.add_argument("--project", help="ADO project name")
     context_set.add_argument("--team", help="Team name")
     context_set.add_argument("--current-iteration", help="Current iteration path")
+    context_set.add_argument("--owner-display-name", help="Default owner display name for Assigned To")
 
     bootstrap = subparsers.add_parser(
         "bootstrap-wit-contracts",
@@ -212,6 +213,7 @@ def _build_parser() -> argparse.ArgumentParser:
     write.add_argument("--dry-run", action="store_true", help="Print plan only; do not write to ADO")
     write.add_argument("--area", help="Override area path for all work items in the run")
     write.add_argument("--iteration", help="Override iteration path for all work items in the run")
+    write.add_argument("--owner-display-name", help="Override owner display name for Assigned To")
     write.add_argument(
         "--policy-dir",
         default="config/policy",
@@ -251,13 +253,45 @@ def _merge_context(
     project: Optional[str] = None,
     team: Optional[str] = None,
     current_iteration: Optional[str] = None,
+    owner_display_name: Optional[str] = None,
 ) -> CLIContext:
     return CLIContext(
         org_url=org_url or base.org_url,
         project=project or base.project,
         team=team or base.team,
         current_iteration=current_iteration or base.current_iteration,
+        owner_display_name=owner_display_name or base.owner_display_name,
     )
+
+
+def _prompt_owner_display_name_selection(project: str, team: Optional[str], generated_dir: Path) -> Optional[str]:
+    owner_names = load_generated_owner_display_names(
+        project=project,
+        team=team,
+        planning_path=generated_dir / "planning_context.yaml",
+    )
+    if not owner_names:
+        return None
+
+    print("Select owner display name for Assigned To:")
+    if team:
+        print(f"Team: {team}")
+    for idx, owner_name in enumerate(owner_names, start=1):
+        print(f"{idx}) {owner_name}")
+    print("s) Skip owner assignment")
+
+    choice = input("Choice: ").strip().lower()
+    if not choice or choice == "s":
+        return None
+    try:
+        selected_index = int(choice)
+    except ValueError:
+        print("Invalid selection; continuing without owner assignment.")
+        return None
+    if selected_index < 1 or selected_index > len(owner_names):
+        print("Invalid selection; continuing without owner assignment.")
+        return None
+    return owner_names[selected_index - 1]
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -274,6 +308,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"project: {context.project or '<not set>'}")
             print(f"team: {context.team or '<not set>'}")
             print(f"current_iteration: {context.current_iteration or '<not set>'}")
+            print(f"owner_display_name: {context.owner_display_name or '<not set>'}")
             return 0
 
         if args.context_cmd == "set":
@@ -283,9 +318,13 @@ def main(argv: Optional[List[str]] = None) -> int:
                 project=args.project,
                 team=args.team,
                 current_iteration=args.current_iteration,
+                owner_display_name=args.owner_display_name,
             )
             if updated == context:
-                parser.error("No updates provided. Pass at least one of --org-url/--project/--team/--current-iteration.")
+                parser.error(
+                    "No updates provided. Pass at least one of "
+                    "--org-url/--project/--team/--current-iteration/--owner-display-name."
+                )
             save_cli_context(updated)
             print("Context updated.")
             return 0
@@ -447,6 +486,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         if not args.dry_run:
             pat = _load_pat_from_env(args.pat_env)
 
+        selected_owner_display_name = args.owner_display_name or context.owner_display_name
+        if selected_owner_display_name is None and sys.stdin.isatty() and sys.stdout.isatty():
+            selected_owner_display_name = _prompt_owner_display_name_selection(
+                project=project,
+                team=args.team or context.team,
+                generated_dir=Path(args.generated_dir),
+            )
+            if selected_owner_display_name:
+                print(f"Using owner display name: {selected_owner_display_name}")
+
         try:
             result = write_outbox(
                 bundle=args.bundle,
@@ -458,6 +507,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 api_version=args.api_version,
                 area_override=args.area,
                 iteration_override=args.iteration,
+                owner_display_name=selected_owner_display_name,
                 policy_dir=Path(args.policy_dir),
                 generated_dir=Path(args.generated_dir),
                 outbox_root=Path(args.outbox_root),
@@ -473,6 +523,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 project=project,
                 team=args.team,
                 current_iteration=args.current_iteration,
+                owner_display_name=selected_owner_display_name,
             )
         )
 
@@ -495,6 +546,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                 if op.get("local_id"):
                     line += f" (local_id={op['local_id']})"
                 print(line)
+                for warning in op.get("warnings", []):
+                    print(f"    WARNING: {warning}")
         print(f"Audit: {result['audit_path']}")
         return 0 if result["strict_ready"] else 2
 

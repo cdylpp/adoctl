@@ -281,6 +281,308 @@ class TestOutboxWrite(unittest.TestCase):
             self.assertIn("Given feature scope", by_path["/fields/System.Description"])
             self.assertNotIn("/fields/Microsoft.VSTS.Common.AcceptanceCriteria", by_path)
 
+    def test_write_description_markdown_is_transformed_to_html(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy_dir = root / "policy"
+            generated_dir = root / "generated"
+            outbox_root = root / "outbox"
+            audit_root = root / "audit"
+            validated_bundle = outbox_root / "validated" / "bundle.json"
+
+            _base_policy(policy_dir)
+            _base_generated(generated_dir)
+            payload = _bundle_payload()
+            payload["work_items"][0]["description"] = "# Feature Summary\n- First item\n- Second item"
+            _write_json(validated_bundle, payload)
+
+            result = write_outbox(
+                bundle=None,
+                write_all_validated=True,
+                dry_run=True,
+                org_url="https://dev.azure.com/example-org",
+                project="ExampleProject",
+                pat=None,
+                policy_dir=policy_dir,
+                generated_dir=generated_dir,
+                outbox_root=outbox_root,
+                audit_root=audit_root,
+            )
+
+            self.assertEqual(result["failed_count"], 0)
+            feature_create_op = result["results"][0]["operations"][0]
+            by_path = {entry["path"]: entry["value"] for entry in feature_create_op["request_body"]}
+            rendered_description = by_path["/fields/System.Description"]
+            self.assertIn("<h1>Feature Summary</h1>", rendered_description)
+            self.assertIn("<ul><li>First item</li><li>Second item</li></ul>", rendered_description)
+
+    def test_write_invalid_owner_defaults_to_null_with_warning(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy_dir = root / "policy"
+            generated_dir = root / "generated"
+            outbox_root = root / "outbox"
+            audit_root = root / "audit"
+            validated_bundle = outbox_root / "validated" / "bundle.json"
+
+            _write_yaml(
+                policy_dir / "wit_map.yaml",
+                {
+                    "schema_version": "1.0",
+                    "canonical_to_ado": {"UserStory": "User Story"},
+                },
+            )
+            _write_yaml(
+                policy_dir / "field_map.yaml",
+                {
+                    "schema_version": "1.0",
+                    "canonical_to_ado": {
+                        "title": {"reference_name": "System.Title", "applies_to": ["UserStory"]},
+                        "description": {"reference_name": "System.Description", "applies_to": ["UserStory"]},
+                        "owner": {"reference_name": "System.AssignedTo", "applies_to": ["UserStory"]},
+                    },
+                },
+            )
+            _write_yaml(
+                policy_dir / "field_policy.yaml",
+                {
+                    "schema_version": "1.0",
+                    "agent_contract_export": {"include_work_item_types": ["UserStory"]},
+                    "allowed_fields": {"UserStory": ["owner"]},
+                    "required_fields": {"UserStory": ["title", "description"]},
+                    "description_required_sections": {},
+                    "description_optional_sections": {},
+                    "owner_identity": {"format": "display_name"},
+                },
+            )
+            _write_yaml(
+                policy_dir / "link_policy.yaml",
+                {
+                    "schema_version": "1.0",
+                    "allowed_link_types": ["parent-child"],
+                    "max_depth": 2,
+                    "forbid_double_nesting": ["UserStory"],
+                },
+            )
+            _write_yaml(
+                policy_dir / "standards.yaml",
+                {
+                    "schema_version": "1.0",
+                    "required_tags": [],
+                    "work_item_standards": {},
+                },
+            )
+            _write_yaml(
+                generated_dir / "wit_contract.yaml",
+                {
+                    "schema_version": "1.0",
+                    "work_item_types": {
+                        "User Story": {
+                            "fields": [
+                                {"reference_name": "System.Title"},
+                                {"reference_name": "System.Description"},
+                                {"reference_name": "System.AssignedTo"},
+                            ]
+                        }
+                    },
+                },
+            )
+            _write_yaml(
+                generated_dir / "planning_context.yaml",
+                {
+                    "schema_version": "1.0",
+                    "project_assignable_identities": [],
+                    "teams": [
+                        {
+                            "name": "DataScience",
+                            "assignable_identities": [
+                                {
+                                    "display_name": "Alex Data",
+                                    "unique_name": "alex.data@example.org",
+                                }
+                            ],
+                        }
+                    ],
+                },
+            )
+
+            _write_json(
+                validated_bundle,
+                {
+                    "schema_version": "1.0",
+                    "bundle_id": "bundle-owner",
+                    "source": {
+                        "agent_name": "test-agent",
+                        "prompt_id": "write-owner",
+                        "generated_at": "2026-02-09T00:00:00Z",
+                    },
+                    "context": {"team": "DataScience"},
+                    "work_items": [
+                        {
+                            "local_id": "US-001",
+                            "type": "UserStory",
+                            "title": "Story with owner",
+                            "description": "Owner scenario",
+                            "acceptance_criteria": [],
+                            "fields": {"owner": "alex.data@example.org"},
+                            "relations": {"parent_local_id": "9001"},
+                        }
+                    ],
+                },
+            )
+
+            result = write_outbox(
+                bundle=None,
+                write_all_validated=True,
+                dry_run=True,
+                org_url="https://dev.azure.com/example-org",
+                project="ExampleProject",
+                pat=None,
+                policy_dir=policy_dir,
+                generated_dir=generated_dir,
+                outbox_root=outbox_root,
+                audit_root=audit_root,
+            )
+
+            self.assertEqual(result["failed_count"], 0)
+            create_operation = result["results"][0]["operations"][0]
+            by_path = {entry["path"]: entry["value"] for entry in create_operation["request_body"]}
+            self.assertNotIn("/fields/System.AssignedTo", by_path)
+            self.assertTrue(create_operation["warnings"])
+            self.assertIn("Assigned To will be null", create_operation["warnings"][0])
+
+    def test_write_owner_override_sets_assigned_to(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy_dir = root / "policy"
+            generated_dir = root / "generated"
+            outbox_root = root / "outbox"
+            audit_root = root / "audit"
+            validated_bundle = outbox_root / "validated" / "bundle.json"
+
+            _write_yaml(
+                policy_dir / "wit_map.yaml",
+                {
+                    "schema_version": "1.0",
+                    "canonical_to_ado": {"UserStory": "User Story"},
+                },
+            )
+            _write_yaml(
+                policy_dir / "field_map.yaml",
+                {
+                    "schema_version": "1.0",
+                    "canonical_to_ado": {
+                        "title": {"reference_name": "System.Title", "applies_to": ["UserStory"]},
+                        "description": {"reference_name": "System.Description", "applies_to": ["UserStory"]},
+                        "owner": {"reference_name": "System.AssignedTo", "applies_to": ["UserStory"]},
+                    },
+                },
+            )
+            _write_yaml(
+                policy_dir / "field_policy.yaml",
+                {
+                    "schema_version": "1.0",
+                    "agent_contract_export": {"include_work_item_types": ["UserStory"]},
+                    "allowed_fields": {"UserStory": ["owner"]},
+                    "required_fields": {"UserStory": ["title", "description"]},
+                    "description_required_sections": {},
+                    "description_optional_sections": {},
+                    "owner_identity": {"format": "display_name"},
+                },
+            )
+            _write_yaml(
+                policy_dir / "link_policy.yaml",
+                {
+                    "schema_version": "1.0",
+                    "allowed_link_types": ["parent-child"],
+                    "max_depth": 2,
+                    "forbid_double_nesting": ["UserStory"],
+                },
+            )
+            _write_yaml(
+                policy_dir / "standards.yaml",
+                {
+                    "schema_version": "1.0",
+                    "required_tags": [],
+                    "work_item_standards": {},
+                },
+            )
+            _write_yaml(
+                generated_dir / "wit_contract.yaml",
+                {
+                    "schema_version": "1.0",
+                    "work_item_types": {
+                        "User Story": {
+                            "fields": [
+                                {"reference_name": "System.Title"},
+                                {"reference_name": "System.Description"},
+                                {"reference_name": "System.AssignedTo"},
+                            ]
+                        }
+                    },
+                },
+            )
+            _write_yaml(
+                generated_dir / "planning_context.yaml",
+                {
+                    "schema_version": "1.0",
+                    "project_assignable_identities": [],
+                    "teams": [
+                        {
+                            "name": "DataScience",
+                            "assignable_identities": [
+                                {
+                                    "display_name": "Alex Data",
+                                    "unique_name": "alex.data@example.org",
+                                }
+                            ],
+                        }
+                    ],
+                },
+            )
+            _write_json(
+                validated_bundle,
+                {
+                    "schema_version": "1.0",
+                    "bundle_id": "bundle-owner-override",
+                    "source": {
+                        "agent_name": "test-agent",
+                        "prompt_id": "write-owner",
+                        "generated_at": "2026-02-09T00:00:00Z",
+                    },
+                    "context": {"team": "DataScience"},
+                    "work_items": [
+                        {
+                            "local_id": "US-001",
+                            "type": "UserStory",
+                            "title": "Story with override owner",
+                            "description": "Owner scenario",
+                            "acceptance_criteria": [],
+                            "fields": {},
+                            "relations": {"parent_local_id": "9001"},
+                        }
+                    ],
+                },
+            )
+
+            result = write_outbox(
+                bundle=None,
+                write_all_validated=True,
+                dry_run=True,
+                org_url="https://dev.azure.com/example-org",
+                project="ExampleProject",
+                pat=None,
+                owner_display_name="Alex Data",
+                policy_dir=policy_dir,
+                generated_dir=generated_dir,
+                outbox_root=outbox_root,
+                audit_root=audit_root,
+            )
+            self.assertEqual(result["failed_count"], 0)
+            create_operation = result["results"][0]["operations"][0]
+            by_path = {entry["path"]: entry["value"] for entry in create_operation["request_body"]}
+            self.assertEqual(by_path["/fields/System.AssignedTo"], "Alex Data")
+
     def test_write_real_stops_on_first_error_and_records_audit(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

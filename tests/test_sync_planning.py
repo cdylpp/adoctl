@@ -36,6 +36,30 @@ class TestPlanningSync(unittest.TestCase):
                         {"id": "t2", "name": "AppDev"},
                     ]
                 }
+            if normalized.endswith("/_apis/projects/project-123/teams/t1/members"):
+                return {
+                    "value": [
+                        {
+                            "identity": {
+                                "displayName": "Alex Data",
+                                "uniqueName": "alex.data@example.org",
+                                "mailAddress": "alex.data@example.org",
+                            }
+                        }
+                    ]
+                }
+            if normalized.endswith("/_apis/projects/project-123/teams/t2/members"):
+                return {
+                    "value": [
+                        {
+                            "identity": {
+                                "displayName": "Bailey App",
+                                "uniqueName": "bailey.app@example.org",
+                                "mailAddress": "bailey.app@example.org",
+                            }
+                        }
+                    ]
+                }
             if "/classificationnodes/areas" in normalized:
                 return _path_tree(project_name)
             if "/classificationnodes/iterations" in normalized:
@@ -118,11 +142,14 @@ class TestPlanningSync(unittest.TestCase):
             self.assertEqual(planning["core_team"], project_name)
             self.assertEqual(planning["project_backlog_defaults"]["area_path"], project_name)
             self.assertEqual(planning["project_backlog_defaults"]["iteration_path"], project_name)
+            self.assertEqual(planning["owner_identity_mode"], "display_name")
+            self.assertEqual(len(planning["project_assignable_identities"]), 2)
             self.assertEqual(len(planning["teams"]), 2)
             data_science = next(item for item in planning["teams"] if item["name"] == "DataScience")
             self.assertEqual(data_science["default_area_path"], f"{project_name}\\DataScience")
             self.assertIn(f"{project_name}\\DataScience", data_science["allowed_area_paths"])
             self.assertIn(f"{project_name}\\DataScience", data_science["allowed_iteration_paths"])
+            self.assertEqual(len(data_science["assignable_identities"]), 1)
             self.assertEqual(len(planning["objectives"]), 1)
             self.assertEqual(len(planning["key_results"]), 1)
             self.assertEqual(planning["key_results"][0]["parent_objective_id"], 100)
@@ -187,6 +214,70 @@ class TestPlanningSync(unittest.TestCase):
             self.assertIn(f"{project_name}\\DSA\\FY26-Q2-03", iteration_paths)
             self.assertTrue(all(f"{project_name}\\Area\\" not in path for path in area_paths))
             self.assertTrue(all(f"{project_name}\\Iteration\\" not in path for path in iteration_paths))
+
+    def test_sync_planning_applies_team_default_overrides(self) -> None:
+        project_name = "Black Lagoon"
+
+        def fake_get(_: ADOConfig, url: str, params=None):  # noqa: ANN001
+            normalized = url.lower()
+            if normalized.endswith("/_apis/projects/project-123/teams"):
+                return {"value": [{"id": "t1", "name": "Data Science and Analytics"}]}
+            if "/classificationnodes/areas" in normalized:
+                return {
+                    "path": f"\\{project_name}\\Area",
+                    "children": [{"path": f"\\{project_name}\\Area\\Data Science and Analytics", "children": []}],
+                }
+            if "/classificationnodes/iterations" in normalized:
+                return {
+                    "path": f"\\{project_name}\\Iteration",
+                    "children": [{"path": f"\\{project_name}\\Iteration\\DSA", "children": []}],
+                }
+            if normalized.endswith("/data%20science%20and%20analytics/_apis/work/teamsettings/iterations"):
+                return {"value": [{"path": f"{project_name}\\DSA"}]}
+            if normalized.endswith("/data%20science%20and%20analytics/_apis/work/teamsettings/teamfieldvalues"):
+                return {"defaultValue": f"{project_name}\\Data Science and Analytics", "value": []}
+            if normalized.endswith("/_apis/projects/project-123/teams/t1/members"):
+                return {"value": []}
+            if normalized.endswith("/_apis/wit/wiql"):
+                raise AssertionError("WIQL should not be called via GET")
+            raise AssertionError(f"Unexpected GET URL in test: {url}")
+
+        def fake_post(_: ADOConfig, url: str, payload, params=None):  # noqa: ANN001
+            if not url.lower().endswith("/_apis/wit/wiql"):
+                raise AssertionError(f"Unexpected POST URL in test: {url}")
+            return {"workItems": []}
+
+        overrides = {
+            "data science and analytics": {
+                "iteration_default": f"{project_name}\\DSA",
+                "area_default": f"{project_name}\\Data Science and Analytics",
+                "iteration_prefixes": [f"{project_name}\\DSA"],
+                "area_prefixes": [f"{project_name}\\Data Science and Analytics"],
+            }
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "generated"
+            cfg = ADOConfig(
+                org_url="https://dev.azure.com/example-org",
+                project=project_name,
+                project_id="project-123",
+                pat="test-pat",
+                api_version="6.0",
+            )
+            with patch("adoctl.sync.ado_sync.ado_get", side_effect=fake_get), patch(
+                "adoctl.sync.ado_sync.ado_post_json", side_effect=fake_post
+            ), patch("adoctl.sync.ado_sync._load_team_defaults_policy", return_value=overrides):
+                sync_ado_to_yaml(
+                    cfg=cfg,
+                    out_dir=str(output_dir),
+                    sections=["paths", "teams", "planning"],
+                )
+
+            planning = yaml.safe_load((output_dir / "planning_context.yaml").read_text(encoding="utf-8"))
+            team = planning["teams"][0]
+            self.assertEqual(team["default_iteration_path"], f"{project_name}\\DSA")
+            self.assertEqual(team["default_area_path"], f"{project_name}\\Data Science and Analytics")
 
 
 if __name__ == "__main__":

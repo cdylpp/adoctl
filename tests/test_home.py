@@ -5,7 +5,12 @@ from unittest.mock import patch
 
 import yaml
 
-from adoctl.cli.home import apply_home_menu_choice, load_generated_teams, render_home_screen
+from adoctl.cli.home import (
+    apply_home_menu_choice,
+    load_generated_owner_display_names,
+    load_generated_teams,
+    render_home_screen,
+)
 from adoctl.config.context import CLIContext
 
 
@@ -23,6 +28,7 @@ class TestHomeScreen(unittest.TestCase):
         self.assertIn("PROJECT", screen)
         self.assertIn("TEAM", screen)
         self.assertIn("CURRENT ITERATION", screen)
+        self.assertIn("OWNER DISPLAY NAME", screen)
         self.assertIn("DataScience", screen)
 
     def test_load_generated_teams_for_project(self) -> None:
@@ -58,6 +64,42 @@ class TestHomeScreen(unittest.TestCase):
                 updated, should_exit = apply_home_menu_choice(context, "3")
         self.assertFalse(should_exit)
         self.assertEqual(updated.team, "TeamB")
+
+    def test_load_generated_owner_display_names_for_team(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "planning_context.yaml"
+            with path.open("w", encoding="utf-8") as f:
+                yaml.safe_dump(
+                    {
+                        "project": "BlackLagoon",
+                        "project_assignable_identities": [{"display_name": "Shared Person"}],
+                        "teams": [
+                            {
+                                "name": "DataScience",
+                                "assignable_identities": [
+                                    {"display_name": "Alex Data"},
+                                    {"display_name": "Casey ML"},
+                                ],
+                            }
+                        ],
+                    },
+                    f,
+                )
+
+            names = load_generated_owner_display_names(
+                project="BlackLagoon",
+                team="DataScience",
+                planning_path=path,
+            )
+            self.assertEqual(names, ["Alex Data", "Casey ML"])
+
+    def test_menu_choice_select_owner_display_name(self) -> None:
+        context = CLIContext(project="BlackLagoon", team="DataScience")
+        with patch("adoctl.cli.home.load_generated_owner_display_names", return_value=["Alex Data", "Casey ML"]):
+            with patch("builtins.input", return_value="1"):
+                updated, should_exit = apply_home_menu_choice(context, "5")
+        self.assertFalse(should_exit)
+        self.assertEqual(updated.owner_display_name, "Alex Data")
 
 
 if __name__ == "__main__":

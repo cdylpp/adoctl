@@ -3,7 +3,7 @@
 # Edit config/policy/*.yaml (and refresh config/generated/wit_contract.yaml) to change this contract.
 
 schema_version: '1.0'
-generated_at_utc: '2026-02-09T19:56:32.280288+00:00'
+generated_at_utc: '2026-02-09T21:43:29.973134+00:00'
 canonical:
   supported_types:
   - Feature
@@ -132,7 +132,7 @@ rules:
           chain_requirement: Parent Feature should aggregate to a Key Result.
           required_parent_type: Feature
         owner:
-          required: true
+          required: false
           rule: Assign an accountable individual.
         story_points:
           allowed_values:
@@ -544,7 +544,6 @@ field_policy:
     - area_path
     - description
     - iteration_path
-    - owner
     - priority
     - state
     - title
@@ -554,7 +553,6 @@ field_policy:
     - area_path
     - description
     - iteration_path
-    - owner
     - priority
     - state
     - story_points
@@ -584,7 +582,6 @@ field_policy:
     - area_path
     - description
     - iteration_path
-    - owner
     - priority
     - state
     - title
@@ -594,7 +591,6 @@ field_policy:
     - area_path
     - description
     - iteration_path
-    - owner
     - priority
     - state
     - story_points
@@ -603,6 +599,7 @@ field_policy:
   export_work_item_types:
   - Feature
   - UserStory
+  owner_identity_format: display_name
 validation:
   mapping_coverage_issues: []
   strict_ready: true

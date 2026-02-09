@@ -266,6 +266,7 @@ class TestContractConfig(unittest.TestCase):
                 snapshot["field_policy"]["export_work_item_types"],
                 ["Feature", "UserStory"],
             )
+            self.assertEqual(snapshot["field_policy"]["owner_identity_format"], "display_name")
             self.assertIn("work_item_standards", snapshot["rules"]["standards"])
             self.assertIn("Feature", snapshot["rules"]["standards"]["work_item_standards"])
             self.assertIn("UserStory", snapshot["rules"]["standards"]["work_item_standards"])

@@ -32,7 +32,8 @@ An agent must receive all of the following before generating work-item bundles.
    - team-scoped work should use team defaults from `planning_context.yaml`
    - non-team work (Objectives, project-level requests, and applicable Key Results) should use project backlog defaults from `planning_context.yaml`
 3. No ambiguous ownership:
-   - if `owner` is required by contract/policy, provide assignable owner values
+   - if `owner` is used, provide assignable owner values from `planning_context.yaml`
+   - default org policy uses `display_name` for owner identity values (`System.AssignedTo`)
 
 ## If Inputs Are Missing
 

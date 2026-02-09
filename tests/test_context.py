@@ -22,6 +22,7 @@ class TestCLIContext(unittest.TestCase):
                 project="BlackLagoon",
                 team="DataScience",
                 current_iteration="BlackLagoon\\CY26\\Q2\\03",
+                owner_display_name="Alex Data",
             )
             save_cli_context(expected, path=path)
             loaded = load_cli_context(path=path)

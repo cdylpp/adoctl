@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
+import yaml
+
 from adoctl.ado_client.http import ado_get, ado_post_json
 from adoctl.ado_client.models import ADOConfig
 from adoctl.util.fs import atomic_write_text, ensure_dir
@@ -58,6 +60,70 @@ def _flatten_classification_paths(node: Dict[str, Any]) -> List[str]:
     return sorted(set(paths))
 
 
+def _normalize_path_value(path: str) -> Optional[str]:
+    cleaned = path.strip().replace("/", "\\").lstrip("\\")
+    cleaned = re.sub(r"\\+", r"\\", cleaned)
+    return cleaned if cleaned else None
+
+
+def _pick_shortest_path(paths: List[str]) -> Optional[str]:
+    normalized = [path for path in (_normalize_path_value(item) for item in paths) if path]
+    if not normalized:
+        return None
+    return sorted(set(normalized), key=lambda item: (len(item.split("\\")), item.lower()))[0]
+
+
+def _dedupe_preserve(items: List[str]) -> List[str]:
+    seen: set = set()
+    deduped: List[str] = []
+    for item in items:
+        normalized = _normalize_path_value(item)
+        if not normalized:
+            continue
+        key = normalized.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(normalized)
+    return deduped
+
+
+def _load_team_defaults_policy(path: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
+    config_path = path or (Path("config") / "policy" / "team_defaults.yaml")
+    if not config_path.exists():
+        return {}
+    with config_path.open("r", encoding="utf-8") as f:
+        payload = yaml.safe_load(f) or {}
+    if not isinstance(payload, dict):
+        return {}
+    raw_overrides = payload.get("team_defaults", {})
+    if not isinstance(raw_overrides, dict):
+        return {}
+
+    parsed: Dict[str, Dict[str, Any]] = {}
+    for team_name, value in raw_overrides.items():
+        if not isinstance(team_name, str) or not team_name.strip() or not isinstance(value, dict):
+            continue
+        team_key = team_name.strip().lower()
+        parsed[team_key] = {
+            "iteration_default": _normalize_path_value(str(value.get("iteration_default", "")).strip())
+            if isinstance(value.get("iteration_default"), str)
+            else None,
+            "area_default": _normalize_path_value(str(value.get("area_default", "")).strip())
+            if isinstance(value.get("area_default"), str)
+            else None,
+            "iteration_prefixes": _dedupe_preserve(
+                [item for item in value.get("iteration_prefixes", []) if isinstance(item, str)]
+            )
+            if isinstance(value.get("iteration_prefixes"), list)
+            else [],
+            "area_prefixes": _dedupe_preserve([item for item in value.get("area_prefixes", []) if isinstance(item, str)])
+            if isinstance(value.get("area_prefixes"), list)
+            else [],
+        }
+    return parsed
+
+
 def _dump_yaml(obj: Any, path: Path) -> None:
     ensure_dir(path.parent)
     atomic_write_text(
@@ -88,7 +154,9 @@ def _extract_team_iteration_paths(payload: Dict[str, Any]) -> List[str]:
             continue
         path = item.get("path")
         if isinstance(path, str) and path.strip():
-            parsed.append(path.strip().lstrip("\\"))
+            normalized = _normalize_path_value(path)
+            if normalized:
+                parsed.append(normalized)
     return sorted(set(parsed))
 
 
@@ -102,21 +170,96 @@ def _extract_team_area_paths(payload: Dict[str, Any]) -> List[str]:
             continue
         path = item.get("value")
         if isinstance(path, str) and path.strip():
-            parsed.append(path.strip().lstrip("\\"))
+            normalized = _normalize_path_value(path)
+            if normalized:
+                parsed.append(normalized)
     return sorted(set(parsed))
 
 
-def _filter_team_scoped_paths(paths: List[str], project: str, team_name: str) -> List[str]:
-    prefix = f"{project}\\{team_name}".lower()
+def _filter_team_scoped_paths(paths: List[str], prefixes: List[str]) -> List[str]:
+    normalized_prefixes = [prefix.lower() for prefix in _dedupe_preserve(prefixes)]
+    if not normalized_prefixes:
+        return []
     scoped: List[str] = []
     for path in paths:
-        normalized = path.strip()
+        normalized = _normalize_path_value(path or "")
         if not normalized:
             continue
         lowered = normalized.lower()
-        if lowered == prefix or lowered.startswith(prefix + "\\"):
-            scoped.append(normalized)
+        for prefix in normalized_prefixes:
+            if lowered == prefix or lowered.startswith(prefix + "\\"):
+                scoped.append(normalized)
+                break
     return sorted(set(scoped))
+
+
+def _extract_default_iteration_path(payload: Dict[str, Any]) -> Optional[str]:
+    raw_items = payload.get("value", [])
+    if isinstance(raw_items, list):
+        for item in raw_items:
+            if not isinstance(item, dict):
+                continue
+            attributes = item.get("attributes")
+            if isinstance(attributes, dict) and attributes.get("defaultTeamIteration") is True:
+                path = item.get("path")
+                if isinstance(path, str):
+                    normalized = _normalize_path_value(path)
+                    if normalized:
+                        return normalized
+    return None
+
+
+def _extract_default_area_path(payload: Dict[str, Any]) -> Optional[str]:
+    default_value = payload.get("defaultValue")
+    if isinstance(default_value, str):
+        normalized = _normalize_path_value(default_value)
+        if normalized:
+            return normalized
+    return None
+
+
+def _extract_identity_record(raw_member: Dict[str, Any]) -> Optional[Dict[str, Optional[str]]]:
+    identity = raw_member.get("identity")
+    source = identity if isinstance(identity, dict) else raw_member
+    display_name = source.get("displayName")
+    unique_name = source.get("uniqueName")
+    mail_address = source.get("mailAddress")
+    descriptor = source.get("descriptor")
+    member_id = source.get("id")
+    if not isinstance(display_name, str) and not isinstance(unique_name, str):
+        return None
+    return {
+        "display_name": display_name.strip() if isinstance(display_name, str) and display_name.strip() else None,
+        "unique_name": unique_name.strip() if isinstance(unique_name, str) and unique_name.strip() else None,
+        "mail_address": mail_address.strip() if isinstance(mail_address, str) and mail_address.strip() else None,
+        "descriptor": descriptor.strip() if isinstance(descriptor, str) and descriptor.strip() else None,
+        "id": member_id.strip() if isinstance(member_id, str) and member_id.strip() else None,
+    }
+
+
+def _extract_team_assignable_identities(payload: Dict[str, Any]) -> List[Dict[str, Optional[str]]]:
+    raw_items = payload.get("value", [])
+    if not isinstance(raw_items, list):
+        return []
+    parsed: List[Dict[str, Optional[str]]] = []
+    seen: set = set()
+    for item in raw_items:
+        if not isinstance(item, dict):
+            continue
+        record = _extract_identity_record(item)
+        if record is None:
+            continue
+        key = (
+            (record.get("display_name") or "").lower(),
+            (record.get("unique_name") or "").lower(),
+            (record.get("mail_address") or "").lower(),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        parsed.append(record)
+    parsed.sort(key=lambda item: ((item.get("display_name") or item.get("unique_name") or "").lower()))
+    return parsed
 
 
 def _parse_parent_id_from_relations(relations: Any) -> Optional[int]:
@@ -223,12 +366,16 @@ def _sync_planning_semantics(
     teams_payload: Dict[str, Any],
     area_paths: List[str],
     iteration_paths: List[str],
+    project_id: Optional[str],
 ) -> None:
     team_items = teams_payload.get("value", [])
     if not isinstance(team_items, list):
         team_items = []
 
     team_settings_raw: Dict[str, Any] = {}
+    team_defaults_policy = _load_team_defaults_policy()
+    project_assignable_identities: List[Dict[str, Optional[str]]] = []
+    project_identity_seen: set = set()
     teams_semantics: List[Dict[str, Any]] = []
     for team_payload in team_items:
         if not isinstance(team_payload, dict):
@@ -250,16 +397,77 @@ def _sync_planning_semantics(
         team_iteration_setting_paths = _extract_team_iteration_paths(team_iteration_payload)
         team_area_setting_paths = _extract_team_area_paths(team_area_payload)
 
-        scoped_iteration_paths = _filter_team_scoped_paths(iteration_paths, cfg.project or "", team_name)
-        scoped_area_paths = _filter_team_scoped_paths(area_paths, cfg.project or "", team_name)
+        team_policy = team_defaults_policy.get(team_name.lower(), {})
+        default_prefix = _normalize_path_value(f"{cfg.project}\\{team_name}") or f"{cfg.project}\\{team_name}"
+        iteration_prefixes = _dedupe_preserve([default_prefix] + list(team_policy.get("iteration_prefixes", [])))
+        area_prefixes = _dedupe_preserve([default_prefix] + list(team_policy.get("area_prefixes", [])))
 
-        default_iteration_path = f"{cfg.project}\\{team_name}"
-        default_area_path = f"{cfg.project}\\{team_name}"
+        scoped_iteration_paths = _filter_team_scoped_paths(iteration_paths, iteration_prefixes)
+        scoped_area_paths = _filter_team_scoped_paths(area_paths, area_prefixes)
+
+        default_iteration_candidates: List[str] = []
+        if isinstance(team_policy.get("iteration_default"), str):
+            default_iteration_candidates.append(team_policy["iteration_default"])
+        extracted_iteration_default = _extract_default_iteration_path(team_iteration_payload)
+        if extracted_iteration_default:
+            default_iteration_candidates.append(extracted_iteration_default)
+        shortest_iteration_settings = _pick_shortest_path(team_iteration_setting_paths)
+        if shortest_iteration_settings:
+            default_iteration_candidates.append(shortest_iteration_settings)
+        shortest_scoped_iteration = _pick_shortest_path(scoped_iteration_paths)
+        if shortest_scoped_iteration:
+            default_iteration_candidates.append(shortest_scoped_iteration)
+        default_iteration_candidates.append(default_prefix)
+
+        default_area_candidates: List[str] = []
+        if isinstance(team_policy.get("area_default"), str):
+            default_area_candidates.append(team_policy["area_default"])
+        extracted_area_default = _extract_default_area_path(team_area_payload)
+        if extracted_area_default:
+            default_area_candidates.append(extracted_area_default)
+        shortest_area_settings = _pick_shortest_path(team_area_setting_paths)
+        if shortest_area_settings:
+            default_area_candidates.append(shortest_area_settings)
+        shortest_scoped_area = _pick_shortest_path(scoped_area_paths)
+        if shortest_scoped_area:
+            default_area_candidates.append(shortest_scoped_area)
+        default_area_candidates.append(default_prefix)
+
+        default_iteration_path = _dedupe_preserve(default_iteration_candidates)[0]
+        default_area_path = _dedupe_preserve(default_area_candidates)[0]
 
         allowed_iteration_paths = sorted(
             set(team_iteration_setting_paths) | set(scoped_iteration_paths) | {default_iteration_path}
         )
         allowed_area_paths = sorted(set(team_area_setting_paths) | set(scoped_area_paths) | {default_area_path})
+
+        team_members_payload: Dict[str, Any] = {"value": []}
+        if project_id and isinstance(team_payload.get("id"), str) and team_payload.get("id"):
+            members_url = join_url(
+                cfg.org_url,
+                "_apis",
+                "projects",
+                project_id,
+                "teams",
+                str(team_payload.get("id")),
+                "members",
+            )
+            try:
+                team_members_payload = ado_get(cfg, members_url)
+            except Exception as exc:  # noqa: BLE001 - keep sync resilient to optional identity API failures
+                team_members_payload = {"value": [], "error": str(exc)}
+
+        team_assignable_identities = _extract_team_assignable_identities(team_members_payload)
+        for identity in team_assignable_identities:
+            key = (
+                (identity.get("display_name") or "").lower(),
+                (identity.get("unique_name") or "").lower(),
+                (identity.get("mail_address") or "").lower(),
+            )
+            if key in project_identity_seen:
+                continue
+            project_identity_seen.add(key)
+            project_assignable_identities.append(identity)
 
         teams_semantics.append(
             {
@@ -271,12 +479,30 @@ def _sync_planning_semantics(
                 "allowed_area_paths": allowed_area_paths,
                 "team_settings_iteration_paths": team_iteration_setting_paths,
                 "team_settings_area_paths": team_area_setting_paths,
+                "assignable_identities": team_assignable_identities,
+                "iteration_prefixes": iteration_prefixes,
+                "area_prefixes": area_prefixes,
+                "default_iteration_source": "policy"
+                if isinstance(team_policy.get("iteration_default"), str)
+                else (
+                    "team_settings"
+                    if extracted_iteration_default
+                    else ("team_scoped_paths" if shortest_scoped_iteration else "fallback")
+                ),
+                "default_area_source": "policy"
+                if isinstance(team_policy.get("area_default"), str)
+                else (
+                    "team_settings"
+                    if extracted_area_default
+                    else ("team_scoped_paths" if shortest_scoped_area else "fallback")
+                ),
             }
         )
 
         team_settings_raw[team_name] = {
             "iterations_payload": team_iteration_payload,
             "areas_payload": team_area_payload,
+            "members_payload": team_members_payload,
         }
 
     wiql_url = join_url(cfg.org_url, cfg.project, "_apis", "wit", "wiql")
@@ -329,6 +555,11 @@ def _sync_planning_semantics(
         "generated_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
         "project": cfg.project,
         "core_team": cfg.project,
+        "owner_identity_mode": "display_name",
+        "project_assignable_identities": sorted(
+            project_assignable_identities,
+            key=lambda item: ((item.get("display_name") or item.get("unique_name") or "").lower()),
+        ),
         "project_backlog_defaults": {
             "iteration_path": cfg.project,
             "area_path": cfg.project,
@@ -346,6 +577,7 @@ def _sync_planning_semantics(
         "project": cfg.project,
         "teams_payload": teams_payload,
         "team_settings_payloads": team_settings_raw,
+        "team_defaults_policy": team_defaults_policy,
         "objective_kr_wiql_payload": wiql_payload,
         "objective_kr_work_items_payload": work_items_details,
     }
@@ -370,6 +602,7 @@ def sync_ado_to_yaml(
 
     teams_payload: Dict[str, Any] = {}
     normalized_teams: List[Dict[str, Any]] = []
+    project_id: Optional[str] = None
     if "teams" in requested or "planning" in requested:
         if not cfg.project:
             raise ValueError("cfg.project is required to sync teams and planning metadata.")
@@ -482,6 +715,7 @@ def sync_ado_to_yaml(
             teams_payload=teams_payload,
             area_paths=area_paths,
             iteration_paths=iteration_paths,
+            project_id=project_id,
         )
 
     sync_state = {

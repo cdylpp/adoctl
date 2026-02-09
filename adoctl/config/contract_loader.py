@@ -49,6 +49,7 @@ class FieldPolicyConfig:
     export_work_item_types: Tuple[str, ...]
     description_required_sections: Dict[str, Tuple[str, ...]]
     description_optional_sections: Dict[str, Tuple[str, ...]]
+    owner_identity_format: str = "display_name"
 
 
 @dataclass(frozen=True)
@@ -360,6 +361,23 @@ def _parse_export_work_item_types(payload: Dict[str, Any], config_path: Path) ->
     return tuple(parsed)
 
 
+def _parse_owner_identity_format(payload: Dict[str, Any], config_path: Path) -> str:
+    block = payload.get("owner_identity", {})
+    if block is None:
+        return "display_name"
+    if not isinstance(block, dict):
+        raise ValueError(f"owner_identity must be a mapping in {config_path}")
+    raw_format = block.get("format", "display_name")
+    if not isinstance(raw_format, str) or not raw_format.strip():
+        raise ValueError(f"owner_identity.format must be a non-empty string in {config_path}")
+    normalized = raw_format.strip().lower()
+    if normalized not in {"display_name", "unique_name", "either"}:
+        raise ValueError(
+            f"owner_identity.format must be one of display_name|unique_name|either in {config_path}"
+        )
+    return normalized
+
+
 def load_field_policy(path: Optional[Path] = None) -> FieldPolicyConfig:
     config_path = path or (policy_config_dir() / "field_policy.yaml")
     payload = _load_yaml_mapping(config_path)
@@ -370,6 +388,7 @@ def load_field_policy(path: Optional[Path] = None) -> FieldPolicyConfig:
     description_required_sections = _parse_type_to_field_keys(payload, "description_required_sections", config_path)
     description_optional_sections = _parse_type_to_field_keys(payload, "description_optional_sections", config_path)
     export_work_item_types = _parse_export_work_item_types(payload, config_path)
+    owner_identity_format = _parse_owner_identity_format(payload, config_path)
 
     return FieldPolicyConfig(
         allowed_fields=allowed_fields,
@@ -377,6 +396,7 @@ def load_field_policy(path: Optional[Path] = None) -> FieldPolicyConfig:
         export_work_item_types=export_work_item_types,
         description_required_sections=description_required_sections,
         description_optional_sections=description_optional_sections,
+        owner_identity_format=owner_identity_format,
     )
 
 
@@ -408,6 +428,9 @@ def save_field_policy(field_policy: FieldPolicyConfig, path: Optional[Path] = No
             for canonical_type, field_keys in sorted(
                 field_policy.description_optional_sections.items(), key=lambda item: item[0]
             )
+        },
+        "owner_identity": {
+            "format": field_policy.owner_identity_format,
         },
     }
 

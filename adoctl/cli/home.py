@@ -26,12 +26,14 @@ def render_home_screen(context: CLIContext) -> str:
         f"PROJECT           : {_value_or_placeholder(context.project)}",
         f"TEAM              : {_value_or_placeholder(context.team)}",
         f"CURRENT ITERATION : {_value_or_placeholder(context.current_iteration)}",
+        f"OWNER DISPLAY NAME: {_value_or_placeholder(context.owner_display_name)}",
         line,
         "1) Set org URL",
         "2) Set project",
         "3) Select team",
         "4) Set current iteration",
-        "5) Exit",
+        "5) Select owner display name",
+        "6) Exit",
     ]
     return "\n".join(sections)
 
@@ -64,6 +66,56 @@ def load_generated_teams(
         name = team.get("name")
         if isinstance(name, str) and name.strip():
             names.append(name.strip())
+    return sorted(set(names))
+
+
+def load_generated_owner_display_names(
+    project: Optional[str],
+    team: Optional[str],
+    planning_path: Optional[Path] = None,
+) -> List[str]:
+    if not project:
+        return []
+
+    path = planning_path or (generated_config_dir() / "planning_context.yaml")
+    if not path.exists():
+        return []
+
+    with path.open("r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    if not isinstance(data, dict):
+        return []
+
+    file_project = data.get("project")
+    if isinstance(file_project, str) and file_project.strip() and file_project.strip() != project:
+        return []
+
+    names: List[str] = []
+    team_name = team.strip().lower() if isinstance(team, str) and team.strip() else None
+
+    if team_name:
+        for entry in data.get("teams", []):
+            if not isinstance(entry, dict):
+                continue
+            entry_name = entry.get("name")
+            if not isinstance(entry_name, str) or entry_name.strip().lower() != team_name:
+                continue
+            for identity in entry.get("assignable_identities", []):
+                if not isinstance(identity, dict):
+                    continue
+                display_name = identity.get("display_name")
+                if isinstance(display_name, str) and display_name.strip():
+                    names.append(display_name.strip())
+            break
+
+    if not names:
+        for identity in data.get("project_assignable_identities", []):
+            if not isinstance(identity, dict):
+                continue
+            display_name = identity.get("display_name")
+            if isinstance(display_name, str) and display_name.strip():
+                names.append(display_name.strip())
+
     return sorted(set(names))
 
 
@@ -109,6 +161,41 @@ def _choose_team(context: CLIContext) -> CLIContext:
     return replace(context, team=teams[idx - 1])
 
 
+def _choose_owner_display_name(context: CLIContext) -> CLIContext:
+    owner_names = load_generated_owner_display_names(project=context.project, team=context.team)
+    if not owner_names:
+        manual = _prompt_input("No synced team members found. Enter owner display name (blank to cancel)")
+        if manual is None:
+            return context
+        return replace(context, owner_display_name=manual)
+
+    print("Select an owner display name:")
+    for idx, owner_name in enumerate(owner_names, start=1):
+        print(f"{idx}) {owner_name}")
+    print("m) Enter owner display name manually")
+    print("c) Cancel")
+
+    choice = input("Choice: ").strip().lower()
+    if choice == "c" or not choice:
+        return context
+    if choice == "m":
+        manual = _prompt_input("Owner display name")
+        if manual is None:
+            return context
+        return replace(context, owner_display_name=manual)
+
+    try:
+        idx = int(choice)
+    except ValueError:
+        print("Invalid selection.")
+        return context
+
+    if idx < 1 or idx > len(owner_names):
+        print("Invalid selection.")
+        return context
+    return replace(context, owner_display_name=owner_names[idx - 1])
+
+
 def apply_home_menu_choice(context: CLIContext, choice: str) -> Tuple[CLIContext, bool]:
     normalized = choice.strip()
     if normalized == "1":
@@ -129,6 +216,8 @@ def apply_home_menu_choice(context: CLIContext, choice: str) -> Tuple[CLIContext
             context = replace(context, current_iteration=value)
         return context, False
     if normalized == "5":
+        return _choose_owner_display_name(context), False
+    if normalized == "6":
         return context, True
 
     print("Invalid selection.")

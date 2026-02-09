@@ -106,6 +106,7 @@ def _sync_field_policy_required_fields(config: EffectiveContractConfig, field_po
         export_work_item_types=config.field_policy.export_work_item_types,
         description_required_sections=config.field_policy.description_required_sections,
         description_optional_sections=config.field_policy.description_optional_sections,
+        owner_identity_format=config.field_policy.owner_identity_format,
     )
     save_field_policy(updated_policy, path=field_policy_path)
     return True
@@ -213,6 +214,7 @@ def build_agent_contract_snapshot(
                 if canonical_type in export_types
             },
             "export_work_item_types": sorted(list(export_types)),
+            "owner_identity_format": config.field_policy.owner_identity_format,
         },
         "validation": {
             "mapping_coverage_issues": coverage_issues,

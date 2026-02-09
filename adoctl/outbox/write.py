@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import datetime as dt
+import html
 import json
+import re
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple
 
@@ -230,6 +232,95 @@ def _acceptance_criteria_to_text(value: Any) -> Optional[str]:
     return "\n".join(items)
 
 
+def _looks_like_html(value: str) -> bool:
+    return bool(re.search(r"<\s*[a-zA-Z][^>]*>", value))
+
+
+def _markdown_inline_to_html(value: str) -> str:
+    escaped = html.escape(value)
+    escaped = re.sub(
+        r"\[([^\]]+)\]\(([^)]+)\)",
+        lambda match: (
+            f'<a href="{html.escape(match.group(2), quote=True)}">'
+            f"{html.escape(match.group(1))}</a>"
+        ),
+        escaped,
+    )
+    escaped = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped)
+    escaped = re.sub(r"\*(.+?)\*", r"<em>\1</em>", escaped)
+    return escaped
+
+
+def _markdown_to_html(value: str) -> str:
+    if _looks_like_html(value):
+        return value
+
+    lines = value.splitlines()
+    blocks: List[str] = []
+    paragraph_lines: List[str] = []
+    list_items: List[str] = []
+    list_type: Optional[str] = None
+
+    def flush_paragraph() -> None:
+        nonlocal paragraph_lines
+        if not paragraph_lines:
+            return
+        rendered = "<br/>".join(_markdown_inline_to_html(item) for item in paragraph_lines)
+        blocks.append(f"<p>{rendered}</p>")
+        paragraph_lines = []
+
+    def flush_list() -> None:
+        nonlocal list_items, list_type
+        if not list_items or not list_type:
+            return
+        joined = "".join(f"<li>{_markdown_inline_to_html(item)}</li>" for item in list_items)
+        blocks.append(f"<{list_type}>{joined}</{list_type}>")
+        list_items = []
+        list_type = None
+
+    for raw_line in lines:
+        line = raw_line.rstrip()
+        if not line.strip():
+            flush_paragraph()
+            flush_list()
+            continue
+
+        heading_match = re.match(r"^\s*(#{1,6})\s+(.+)$", line)
+        unordered_match = re.match(r"^\s*[-*+]\s+(.+)$", line)
+        ordered_match = re.match(r"^\s*\d+\.\s+(.+)$", line)
+
+        if heading_match:
+            flush_paragraph()
+            flush_list()
+            level = len(heading_match.group(1))
+            text = _markdown_inline_to_html(heading_match.group(2).strip())
+            blocks.append(f"<h{level}>{text}</h{level}>")
+            continue
+
+        if unordered_match:
+            flush_paragraph()
+            if list_type not in {None, "ul"}:
+                flush_list()
+            list_type = "ul"
+            list_items.append(unordered_match.group(1).strip())
+            continue
+
+        if ordered_match:
+            flush_paragraph()
+            if list_type not in {None, "ol"}:
+                flush_list()
+            list_type = "ol"
+            list_items.append(ordered_match.group(1).strip())
+            continue
+
+        flush_list()
+        paragraph_lines.append(line.strip())
+
+    flush_paragraph()
+    flush_list()
+    return "\n".join(blocks) if blocks else "<p></p>"
+
+
 def _collect_local_id_map(work_items: Sequence[Dict[str, Any]]) -> Tuple[Dict[str, Dict[str, Any]], Set[str]]:
     by_local_id: Dict[str, Dict[str, Any]] = {}
     duplicates: Set[str] = set()
@@ -328,6 +419,105 @@ def _merge_acceptance_into_description(
     return f"{description}\n\n{section}"
 
 
+def _load_planning_context(generated_dir: Path) -> Dict[str, Any]:
+    planning_path = generated_dir / "planning_context.yaml"
+    if not planning_path.exists():
+        return {}
+    with planning_path.open("r", encoding="utf-8") as f:
+        payload = yaml.safe_load(f) or {}
+    if not isinstance(payload, dict):
+        return {}
+    return payload
+
+
+def _normalize_identity(value: Optional[str]) -> Optional[str]:
+    if not isinstance(value, str):
+        return None
+    cleaned = value.strip().lower()
+    return cleaned if cleaned else None
+
+
+def _owner_identity_indexes(
+    planning_context: Dict[str, Any],
+    team_name: Optional[str],
+) -> Tuple[Dict[str, str], Dict[str, str]]:
+    display_index: Dict[str, str] = {}
+    unique_index: Dict[str, str] = {}
+
+    def add_identity(identity_payload: Any) -> None:
+        if not isinstance(identity_payload, dict):
+            return
+        display_name = identity_payload.get("display_name")
+        unique_name = identity_payload.get("unique_name")
+        if isinstance(display_name, str) and display_name.strip():
+            display_index[display_name.strip().lower()] = display_name.strip()
+        if isinstance(unique_name, str) and unique_name.strip():
+            unique_index[unique_name.strip().lower()] = unique_name.strip()
+
+    for identity in planning_context.get("project_assignable_identities", []):
+        add_identity(identity)
+
+    teams = planning_context.get("teams", [])
+    if isinstance(teams, list):
+        for team in teams:
+            if not isinstance(team, dict):
+                continue
+            team_value = _as_string(team.get("name"))
+            if team_name and team_value and team_value.lower() != team_name.lower():
+                continue
+            for identity in team.get("assignable_identities", []):
+                add_identity(identity)
+
+    return display_index, unique_index
+
+
+def _resolve_owner_identity(
+    owner_value: str,
+    owner_identity_format: str,
+    planning_context: Dict[str, Any],
+    team_name: Optional[str],
+) -> str:
+    normalized_owner = _normalize_identity(owner_value)
+    if not normalized_owner:
+        return owner_value
+    display_index, unique_index = _owner_identity_indexes(planning_context, team_name=team_name)
+    if not display_index and not unique_index:
+        raise ValueError(
+            "Owner validation requires assignable identities from planning context. "
+            "Run `adoctl sync --planning-only` before `adoctl write`."
+        )
+
+    display_match = display_index.get(normalized_owner)
+    unique_match = unique_index.get(normalized_owner)
+
+    if owner_identity_format == "display_name":
+        if display_match:
+            return display_match
+        if unique_match:
+            raise ValueError(
+                f"Owner '{owner_value}' matches unique_name '{unique_match}', "
+                "but policy requires display_name."
+            )
+    elif owner_identity_format == "unique_name":
+        if unique_match:
+            return unique_match
+        if display_match:
+            raise ValueError(
+                f"Owner '{owner_value}' matches display_name '{display_match}', "
+                "but policy requires unique_name."
+            )
+    else:  # either
+        if display_match:
+            return display_match
+        if unique_match:
+            return unique_match
+
+    raise ValueError(
+        f"Owner '{owner_value}' is not assignable for the resolved team/project context. "
+        "Use a value from planning_context assignable identities."
+    )
+
+
 def _extract_ado_id(response_payload: Dict[str, Any], operation_url: str) -> int:
     raw_id = response_payload.get("id")
     if isinstance(raw_id, int):
@@ -362,6 +552,9 @@ def _build_create_operation(
     work_item: Dict[str, Any],
     default_area_path: Optional[str],
     default_iteration_path: Optional[str],
+    planning_context: Dict[str, Any],
+    context_team_name: Optional[str],
+    owner_override: Optional[str],
 ) -> Dict[str, Any]:
     local_id = _as_string(work_item.get("local_id"))
     if not local_id:
@@ -386,6 +579,15 @@ def _build_create_operation(
         default_area_path=default_area_path,
         default_iteration_path=default_iteration_path,
     )
+    warnings: List[str] = []
+
+    if _is_non_empty(owner_override) and _can_write_canonical_field(
+        contract=contract,
+        canonical_type=canonical_type,
+        canonical_key="owner",
+        wit_field_reference_names=wit_contract.field_reference_names,
+    ):
+        canonical_values["owner"] = owner_override
 
     acceptance_criteria_text = _as_string(canonical_values.get("acceptance_criteria"))
     if acceptance_criteria_text and not _can_write_canonical_field(
@@ -410,6 +612,30 @@ def _build_create_operation(
             acceptance_criteria_text=acceptance_criteria_text,
         )
         canonical_values.pop("acceptance_criteria", None)
+
+    owner_value = _as_string(canonical_values.get("owner"))
+    if owner_value:
+        try:
+            canonical_values["owner"] = _resolve_owner_identity(
+                owner_value=owner_value,
+                owner_identity_format=contract.field_policy.owner_identity_format,
+                planning_context=planning_context,
+                team_name=context_team_name,
+            )
+        except ValueError as exc:
+            canonical_values.pop("owner", None)
+            warnings.append(
+                f"Owner '{owner_value}' is not assignable for this context; Assigned To will be null. Detail: {exc}"
+            )
+
+    description_value = _as_string(canonical_values.get("description"))
+    if description_value and _can_write_canonical_field(
+        contract=contract,
+        canonical_type=canonical_type,
+        canonical_key="description",
+        wit_field_reference_names=wit_contract.field_reference_names,
+    ):
+        canonical_values["description"] = _markdown_to_html(description_value)
 
     required_keys = tuple(contract.effective_required_fields_by_type().get(canonical_type, set()))
     missing_fields = _required_missing_fields(required_keys, canonical_values)
@@ -455,6 +681,7 @@ def _build_create_operation(
         "method": "POST",
         "url": create_url,
         "body": patch_document,
+        "warnings": warnings,
     }
 
 
@@ -543,10 +770,12 @@ def _process_bundle(
     dry_run: bool,
     default_area_path: Optional[str],
     default_iteration_path: Optional[str],
+    planning_context: Dict[str, Any],
     registry_payload: Dict[str, Any],
     registry_file_path: Path,
     create_request: CreateRequest,
     link_request: LinkRequest,
+    owner_override: Optional[str],
 ) -> Dict[str, Any]:
     try:
         work_items = _ordered_work_items(_bundle_work_items(bundle_payload))
@@ -562,6 +791,9 @@ def _process_bundle(
     local_to_ado: Dict[str, int] = {}
     operations: List[Dict[str, Any]] = []
     simulated_id = 100000
+    context = bundle_payload.get("context")
+    context_mapping = context if isinstance(context, dict) else {}
+    context_team_name = _as_string(context_mapping.get("team"))
 
     for work_item in work_items:
         local_id = _as_string(work_item.get("local_id")) or "<unknown>"
@@ -591,6 +823,9 @@ def _process_bundle(
                 work_item=work_item,
                 default_area_path=default_area_path,
                 default_iteration_path=default_iteration_path,
+                planning_context=planning_context,
+                context_team_name=context_team_name,
+                owner_override=owner_override,
             )
         except Exception as exc:  # noqa: BLE001 - fail-fast writer behavior
             operations.append(
@@ -622,6 +857,7 @@ def _process_bundle(
             "url": create_operation["url"],
             "request_body": create_operation["body"],
             "executed_at_utc": _now_utc(),
+            "warnings": list(create_operation.get("warnings", [])),
         }
 
         if dry_run:
@@ -761,6 +997,7 @@ def write_outbox(
     api_version: str = "6.0",
     area_override: Optional[str] = None,
     iteration_override: Optional[str] = None,
+    owner_display_name: Optional[str] = None,
     policy_dir: Optional[Path] = None,
     generated_dir: Optional[Path] = None,
     outbox_root: Optional[Path] = None,
@@ -795,7 +1032,9 @@ def write_outbox(
             raise FileNotFoundError(f"Bundle file not found: {bundle}")
         bundle_paths = [bundle_path]
 
-    contract = load_effective_contract(policy_dir=policy_dir, generated_dir=generated_dir)
+    resolved_generated_dir = generated_dir if generated_dir is not None else Path("config") / "generated"
+    contract = load_effective_contract(policy_dir=policy_dir, generated_dir=resolved_generated_dir)
+    planning_context = _load_planning_context(resolved_generated_dir)
     cfg = ADOConfig(
         org_url=org_url.strip(),
         project=project.strip(),
@@ -829,10 +1068,12 @@ def write_outbox(
                 dry_run=dry_run,
                 default_area_path=resolved_area,
                 default_iteration_path=resolved_iteration,
+                planning_context=planning_context,
                 registry_payload=registry_payload,
                 registry_file_path=registry_file_path,
                 create_request=create_call,
                 link_request=link_call,
+                owner_override=_as_string(owner_display_name),
             )
         except Exception as exc:  # noqa: BLE001 - audit should still emit for unexpected failures
             result = {
@@ -891,6 +1132,7 @@ def write_outbox(
             "all_validated": write_all_validated,
             "area_override": _as_string(area_override),
             "iteration_override": _as_string(iteration_override),
+            "owner_display_name": _as_string(owner_display_name),
         },
         "bundles": results,
     }
