@@ -15,13 +15,19 @@ def _write_yaml(path: Path, payload: dict) -> None:
 
 
 class TestInstructionSetExport(unittest.TestCase):
-    def test_export_instruction_set_runs_contract_export_and_copies_contracts(self) -> None:
+    def test_export_instruction_set_runs_contract_export_and_builds_single_document(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             policy_dir = root / "policy"
             generated_dir = root / "generated"
             instruction_set_dir = root / "instruction_set"
             schema_path = root / "bundle.schema.json"
+            instruction_set_dir.mkdir(parents=True, exist_ok=True)
+            (instruction_set_dir / "01_required_inputs.md").write_text("# One\none content\n", encoding="utf-8")
+            (instruction_set_dir / "02_contracts_and_rules.md").write_text("# Two\ntwo content\n", encoding="utf-8")
+            (instruction_set_dir / "03_output_expectations.md").write_text("# Three\nthree content\n", encoding="utf-8")
+            (instruction_set_dir / "04_generation_workflow.md").write_text("# Four\nfour content\n", encoding="utf-8")
+            (instruction_set_dir / "05_efficiency_notes.md").write_text("# Five\nfive content\n", encoding="utf-8")
 
             _write_yaml(
                 policy_dir / "wit_map.yaml",
@@ -101,15 +107,31 @@ class TestInstructionSetExport(unittest.TestCase):
             )
 
             self.assertIsNotNone(result["contract_export"])
-            self.assertTrue((instruction_set_dir / "contracts" / "agent_contract.yaml").exists())
-            self.assertTrue((instruction_set_dir / "contracts" / "bundle.schema.json").exists())
-            self.assertTrue((instruction_set_dir / "contracts" / "planning_context.yaml").exists())
+            self.assertTrue((instruction_set_dir / "instruction_set.md").exists())
 
-            exported_contract = yaml.safe_load((instruction_set_dir / "contracts" / "agent_contract.yaml").read_text(encoding="utf-8"))
+            exported_contract = yaml.safe_load((generated_dir / "agent_contract.yaml").read_text(encoding="utf-8"))
             self.assertTrue(exported_contract["planning"]["available"])
             self.assertEqual(exported_contract["planning"]["project"], "Black Lagoon")
             self.assertEqual(len(exported_contract["planning"]["objectives"]), 1)
-            self.assertEqual(len(result["copied_files"]), 3)
+            self.assertEqual(len(result["sections"]), 8)
+
+            compiled = (instruction_set_dir / "instruction_set.md").read_text(encoding="utf-8")
+            ordered_headers = [
+                "## 01 Required Inputs",
+                "## 02 Contracts And Rules",
+                "## 03 Output Expectations",
+                "## 04 Generation Workflow",
+                "## 05 Efficiency Notes",
+                "## 06 Agent Contract",
+                "## 07 Bundle Schema",
+                "## 08 Planning Context",
+            ]
+            positions = [compiled.find(header) for header in ordered_headers]
+            self.assertTrue(all(pos >= 0 for pos in positions))
+            self.assertEqual(positions, sorted(positions))
+            self.assertIn("```yaml\n", compiled)
+            self.assertIn("```json\n", compiled)
+            self.assertGreaterEqual(compiled.count("```yaml\n"), 2)
 
     def test_export_instruction_set_requires_planning_context(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

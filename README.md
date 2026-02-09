@@ -222,6 +222,13 @@ Bootstrap policy metadata from team wiki docs (one-time seed):
 - Use end-to-end instruction-set export:
   - `python -m adoctl instruction-set export --out-dir instruction_set --policy-dir config/policy --generated-dir config/generated --schema schema/bundle.schema.json`
 - This command runs `contract export` (unless skipped) and refreshes:
-  - `instruction_set/contracts/agent_contract.yaml`
-  - `instruction_set/contracts/bundle.schema.json`
-  - `instruction_set/contracts/planning_context.yaml`
+  - `instruction_set/instruction_set.md`
+- The single document concatenates:
+  - `01_required_inputs.md`
+  - `02_contracts_and_rules.md`
+  - `03_output_expectations.md`
+  - `04_generation_workflow.md`
+  - `05_efficiency_notes.md`
+  - `agent_contract.yaml` (fenced as `yaml`)
+  - `bundle.schema.json` (fenced as `json`)
+  - `planning_context.yaml` (fenced as `yaml`)

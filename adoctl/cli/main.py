@@ -157,7 +157,7 @@ def _build_parser() -> argparse.ArgumentParser:
     instruction_set_sub = instruction_set.add_subparsers(dest="instruction_set_cmd", required=True)
     instruction_set_export = instruction_set_sub.add_parser(
         "export",
-        help="Refresh instruction_set/contracts from generated contract, planning context, and schema",
+        help="Build a single instruction_set.md from instruction docs, contract, schema, and planning context",
     )
     instruction_set_export.add_argument(
         "--out-dir",
@@ -431,9 +431,9 @@ def main(argv: Optional[List[str]] = None) -> int:
             strict_status = "ready" if contract_export_result["strict_ready"] else "not ready"
             print(f"Contract export status: {strict_status}")
             print(f"Contract output: {contract_export_result['output_path']}")
-        print(f"Instruction set contracts refreshed: {result['contracts_dir']}")
-        for copied_file in result["copied_files"]:
-            print(f"Copied {copied_file['source']} -> {copied_file['destination']}")
+        print(f"Instruction set document refreshed: {result['instruction_set_markdown_path']}")
+        for section in result["sections"]:
+            print(f"Section {section['title']}: {section['source']} ({section['format']})")
         return 0
 
     if args.command == "outbox" and args.outbox_cmd == "validate":
