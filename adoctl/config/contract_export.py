@@ -110,7 +110,6 @@ def build_agent_contract_snapshot(config: EffectiveContractConfig) -> Dict[str, 
                 "forbid_double_nesting": list(config.link_policy.forbid_double_nesting),
             },
             "standards": {
-                "user_story_title_format": config.standards.user_story_title_format,
                 "required_tags": list(config.standards.required_tags),
                 "work_item_standards": {
                     canonical_type: _sorted_nested(standard)

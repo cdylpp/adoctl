@@ -38,7 +38,6 @@ class LinkPolicyConfig:
 
 @dataclass(frozen=True)
 class StandardsPolicyConfig:
-    user_story_title_format: str
     required_tags: Tuple[str, ...]
     work_item_standards: Dict[str, Dict[str, Any]]
 
@@ -307,25 +306,11 @@ def load_standards_policy(path: Optional[Path] = None) -> StandardsPolicyConfig:
             raise ValueError(f"work_item_standards['{canonical_type}'] must be an object in {config_path}")
         work_item_standards[canonical_type.strip()] = value
 
-    format_value = payload.get("user_story_title_format")
-    if not isinstance(format_value, str) or not format_value.strip():
-        derived_format = (
-            work_item_standards.get("UserStory", {})
-            .get("title", {})
-            .get("rule")
-        )
-        if not isinstance(derived_format, str) or not derived_format.strip():
-            raise ValueError(
-                f"user_story_title_format must be set, or derivable from work_item_standards.UserStory.title.rule in {config_path}"
-            )
-        format_value = derived_format
-
     required_tags = payload.get("required_tags", [])
     if not isinstance(required_tags, list) or any(not isinstance(item, str) for item in required_tags):
         raise ValueError(f"required_tags must be a list[str] in {config_path}")
 
     return StandardsPolicyConfig(
-        user_story_title_format=format_value.strip(),
         required_tags=tuple(required_tags),
         work_item_standards=work_item_standards,
     )

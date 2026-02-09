@@ -2,7 +2,7 @@
 
 Azure DevOps decomposition outbox + writer CLI.
 
-This tool is designed to take **agent-generated decompositions** (Features + User Stories) in a canonical JSON “bundle” format, validate them against **team policy** and **ADO-derived metadata**, then (eventually) bulk-create the work items in Azure DevOps safely.
+This tool is designed to take **agent-generated decompositions** (Features + User Stories) in a canonical JSON “bundle” format, validate them against **team policy** and **ADO-derived metadata**, then bulk-create the work items in Azure DevOps safely.
 
 ## Quickstart
 
@@ -71,9 +71,7 @@ Edit policy and local context; do not hand-edit generated artifacts.
   - `config/generated/agent_contract.yaml`
   - `config/generated/contract_lint.yaml` (when emitted)
 
-Each config file now includes top-of-file comments declaring whether it is user-managed or machine-generated.
-
-Simple lineage:
+Lineage:
 
 ```text
 ADO metadata (sync/bootstrap) -----> config/generated/wit_contract*.yaml
@@ -102,13 +100,14 @@ Machine-readable contracts.
 File-based workflow for bundles.
 
 - `outbox/ready/` — agent drops bundles here.
-- `outbox/validated/` — bundles that pass validation (future command).
-- `outbox/failed/` — bundles that fail validation + reports (future command).
-- `outbox/archived/` — bundles successfully written + audit ref (future command).
+- `outbox/validated/` — bundles that pass `adoctl outbox validate`.
+- `outbox/failed/` — bundles that fail validation + `*.report.yaml`.
+- `outbox/archived/` — bundles successfully written and archived after `adoctl write`.
+- `outbox/_written_work_items.yaml` — machine-generated registry of `local_id -> ado_id` for written items.
 
 ### `audit/`
 
-Structured audit artifacts emitted by `adoctl write` (future).
+Structured audit artifacts emitted by `adoctl write` (one file per run).
 
 ### `logs/`
 
@@ -118,7 +117,7 @@ Local log output (future: structured logs + redaction).
 
 - `environment.yml` — conda environment (pinned to Python `3.8.5`).
 - `pyproject.toml` — packaging + CLI script definition (`adoctl`).
-- `specs.md` — system specification and intended behavior.
+- `docs/specs.md` — system specification and intended behavior.
 - `AGENTS.md` — engineering constraints and the canonical bundle contract.
 
 ## Typical Developer Workflow
@@ -175,10 +174,34 @@ Bootstrap policy metadata from team wiki docs (one-time seed):
 - This adds `wiki_required_metadata`, `wiki_optional_metadata`, and `wiki_source_docs` sections to `field_policy.yaml`.
 - Runtime canonical policy keys (`allowed_fields`, `required_fields`) are preserved and remain the enforcement source.
 
-2) Validate outbox bundles (not implemented yet):
+2) Validate outbox bundles:
 
-- Intended: schema → policy → ADO metadata validation; no ADO writes on failure.
+- Run `python -m adoctl outbox validate --all`
+- Or run `python -m adoctl outbox validate outbox/ready/<bundle>.json`
+- Validation order is strict and gated:
+  - schema (`schema/bundle.schema.json`)
+  - policy (link rules, required fields, local_id uniqueness)
+  - metadata (wit/field mapping + area/iteration path resolvability)
+- Failure behavior:
+  - write `outbox/failed/<bundle>.report.yaml`
+  - move bundle to `outbox/failed/` when validating from `outbox/ready/`
+- Success behavior:
+  - move bundle to `outbox/validated/` when validating from `outbox/ready/`
+- Exit code:
+  - `0` when all processed bundles pass
+  - `2` when one or more bundles fail
 
-3) Write work items (not implemented yet):
+3) Write validated bundles:
 
-- Intended: `--dry-run` supported, create Features then User Stories, link via parent-child, audit always, fail fast.
+- Dry-run planning:
+  - `python -m adoctl write --all-validated --dry-run --org-url "https://dev.azure.com/<ORG>" --project "<PROJECT>"`
+  - prints a resolved method + URL plan for each create/link operation
+  - writes an audit file under `audit/` with simulated IDs and request payloads
+- Real write:
+  - `python -m adoctl write --all-validated --org-url "https://dev.azure.com/<ORG>" --project "<PROJECT>"`
+  - creates Features first, then User Stories
+  - skips create for local IDs already present in `outbox/_written_work_items.yaml`
+  - links each created item to `relations.parent_local_id` using parent-child hierarchy links only
+  - resolves parent links from in-run creates, registry local IDs, or numeric ADO IDs
+  - stops on first error and writes audit with failure reason
+  - archives successfully written bundles from `outbox/validated/` to `outbox/archived/`

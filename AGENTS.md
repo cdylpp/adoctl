@@ -1,9 +1,9 @@
 # AGENT.md — ADO Decomposition Outbox + Writer CLI
 
 Project Root: `/Users/codylepp/Development/ado cli/adoctl`
-Current Tasking: `./TODO.md` under AGENTS Tasking.
+Current Tasking: `TODO.md` under AGENTS Tasking.
   When completed with a task: check the box to ensure it is tracked i.e.,  - [X] 
-Specifications: `./specs.md`
+Specifications: `docs/specs.md`
 
 
 ## Purpose (Why this project exists)
@@ -70,6 +70,16 @@ If you are blocked, request guidance early rather than guessing.
 Must use ADO REST APIS:
 
 - version:  6.0
+
+#### Azure Dev Ops API docs (https://learn.microsoft.com/en-us/rest/api/azure/devops/?view=azure-devops-rest-6.0)
+
+Work Items - create: create a single work item
+- POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/${type}?api-version=6.0
+- POST https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/${type}?validateOnly={validateOnly}&bypassRules={bypassRules}&suppressNotifications={suppressNotifications}&$expand={$expand}&api-version=6.0
+
+Work Items - update: update a single work item
+- PATCH https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=6.0
+- See https://learn.microsoft.com/en-us/rest/api/azure/devops/wit/work-items/update?view=azure-devops-rest-7.2&tabs=HTTP for more.
 
 ---
 
@@ -167,9 +177,8 @@ Keep it testable and unambiguous.
 
 ### User Story title
 
-Use the format:
-
-- `"As a <role>, I can <capability>, so that <benefit>."`
+- concise, action-oriented, outcome-focused
+- avoid hard-coded sentence templates unless policy explicitly requires one
 
 ### Descriptions
 

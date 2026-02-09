@@ -3,7 +3,7 @@
 # Edit config/policy/*.yaml (and refresh config/generated/wit_contract.yaml) to change this contract.
 
 schema_version: '1.0'
-generated_at_utc: '2026-02-07T19:48:41.217769+00:00'
+generated_at_utc: '2026-02-09T05:57:06.481453+00:00'
 canonical:
   supported_types:
   - Feature
@@ -82,7 +82,6 @@ rules:
     - Feature
     - UserStory
   standards:
-    user_story_title_format: Clear, meaningful title containing the action to be completed.
     required_tags: []
     work_item_standards:
       Feature:

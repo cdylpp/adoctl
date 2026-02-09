@@ -15,7 +15,7 @@ def _write_yaml(path: Path, payload: dict) -> None:
 
 
 class TestContractConfig(unittest.TestCase):
-    def test_load_effective_contract_derives_user_story_title_format_from_work_item_standards(self) -> None:
+    def test_load_effective_contract_reads_work_item_standards(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             policy_dir = root / "policy"
@@ -84,7 +84,10 @@ class TestContractConfig(unittest.TestCase):
             )
 
             effective = load_effective_contract(policy_dir=policy_dir, generated_dir=generated_dir)
-            self.assertEqual(effective.standards.user_story_title_format, "Clear action-oriented title.")
+            self.assertEqual(
+                effective.standards.work_item_standards["UserStory"]["title"]["rule"],
+                "Clear action-oriented title.",
+            )
 
     def test_load_effective_contract_and_validate_coverage(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -125,7 +128,6 @@ class TestContractConfig(unittest.TestCase):
                 policy_dir / "standards.yaml",
                 {
                     "schema_version": "1.0",
-                    "user_story_title_format": "As a <role>, I can <capability>, so that <benefit>.",
                     "required_tags": [],
                     "work_item_standards": {
                         "Feature": {"title": {"rule": "Concise"}},
@@ -212,7 +214,6 @@ class TestContractConfig(unittest.TestCase):
                 policy_dir / "standards.yaml",
                 {
                     "schema_version": "1.0",
-                    "user_story_title_format": "As a <role>, I can <capability>, so that <benefit>.",
                     "required_tags": ["KR-2"],
                     "work_item_standards": {
                         "Feature": {
@@ -326,7 +327,6 @@ class TestContractConfig(unittest.TestCase):
                 policy_dir / "standards.yaml",
                 {
                     "schema_version": "1.0",
-                    "user_story_title_format": "As a <role>, I can <capability>, so that <benefit>.",
                     "required_tags": [],
                     "work_item_standards": {
                         "Feature": {"title": {"rule": "Concise"}},
@@ -432,7 +432,6 @@ class TestContractConfig(unittest.TestCase):
                 policy_dir / "standards.yaml",
                 {
                     "schema_version": "1.0",
-                    "user_story_title_format": "As a <role>, I can <capability>, so that <benefit>.",
                     "required_tags": [],
                     "work_item_standards": {
                         "Feature": {"title": {"rule": "Concise"}},

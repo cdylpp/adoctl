@@ -12,6 +12,8 @@ from adoctl.config.contract_export import export_agent_contract
 from adoctl.config.contract_lint import lint_contract
 from adoctl.config.context import CLIContext, load_cli_context, save_cli_context
 from adoctl.config.wiki_policy_bootstrap import bootstrap_field_policy_from_docs
+from adoctl.outbox.validate import validate_outbox
+from adoctl.outbox.write import write_outbox
 from adoctl.sync.ado_sync import sync_ado_to_yaml
 from adoctl.sync.wit_bootstrap import bootstrap_wit_contracts_from_extract
 
@@ -146,11 +148,44 @@ def _build_parser() -> argparse.ArgumentParser:
     validate = outbox_sub.add_parser("validate", help="Validate outbox bundles (schema → policy → metadata)")
     validate.add_argument("bundle", nargs="?", help="Path to a bundle JSON file")
     validate.add_argument("--all", action="store_true", help="Validate all bundles in outbox/ready")
+    validate.add_argument(
+        "--policy-dir",
+        default="config/policy",
+        help="Policy config directory",
+    )
+    validate.add_argument(
+        "--generated-dir",
+        default="config/generated",
+        help="Generated config directory",
+    )
+    validate.add_argument(
+        "--schema",
+        default="schema/bundle.schema.json",
+        help="Bundle JSON schema path",
+    )
 
-    write = subparsers.add_parser("write", help="Write validated bundles to ADO (not implemented yet)")
+    write = subparsers.add_parser("write", help="Write validated bundles to ADO")
+    _add_global_args(write)
     write.add_argument("bundle", nargs="?", help="Path to a validated bundle JSON file")
     write.add_argument("--all-validated", action="store_true", help="Write all bundles in outbox/validated")
     write.add_argument("--dry-run", action="store_true", help="Print plan only; do not write to ADO")
+    write.add_argument("--area", help="Override area path for all work items in the run")
+    write.add_argument("--iteration", help="Override iteration path for all work items in the run")
+    write.add_argument(
+        "--policy-dir",
+        default="config/policy",
+        help="Policy config directory",
+    )
+    write.add_argument(
+        "--generated-dir",
+        default="config/generated",
+        help="Generated config directory",
+    )
+    write.add_argument(
+        "--outbox-root",
+        default="outbox",
+        help="Outbox root directory",
+    )
 
     return parser
 
@@ -287,12 +322,104 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
 
     if args.command == "outbox" and args.outbox_cmd == "validate":
-        print("outbox validate: not implemented yet", file=sys.stderr)
-        return 2
+        try:
+            result = validate_outbox(
+                bundle=args.bundle,
+                validate_all=args.all,
+                policy_dir=Path(args.policy_dir),
+                generated_dir=Path(args.generated_dir),
+                schema_path=Path(args.schema),
+            )
+        except Exception as exc:  # noqa: BLE001 - CLI surface should return actionable errors
+            print(f"outbox validate: {exc}", file=sys.stderr)
+            return 2
+
+        print(
+            "Validated bundles: "
+            f"{result['validated_count']} total, {result['passed_count']} passed, {result['failed_count']} failed"
+        )
+        for entry in result["results"]:
+            if entry["result"] == "passed":
+                if entry["moved_bundle_path"]:
+                    print(f"PASS {entry['bundle_path']} -> {entry['moved_bundle_path']}")
+                else:
+                    print(f"PASS {entry['bundle_path']}")
+            else:
+                message = f"FAIL {entry['bundle_path']}"
+                if entry["moved_bundle_path"]:
+                    message += f" -> {entry['moved_bundle_path']}"
+                if entry["report_path"]:
+                    message += f" (report: {entry['report_path']})"
+                print(message)
+        return 0 if result["strict_ready"] else 2
 
     if args.command == "write":
-        print("write: not implemented yet", file=sys.stderr)
-        return 2
+        if args.all_validated and args.bundle:
+            parser.error("Pass either a bundle path or --all-validated, not both.")
+        if not args.all_validated and not args.bundle:
+            parser.error("Provide a bundle path or pass --all-validated.")
+
+        org_url = args.org_url or context.org_url
+        project = args.project or context.project
+        if not org_url:
+            parser.error("Missing org URL. Pass --org-url or set it via `adoctl context set --org-url`.")
+        if not project:
+            parser.error("Missing project. Pass --project or set it via `adoctl context set --project`.")
+
+        pat: Optional[str] = None
+        if not args.dry_run:
+            pat = _load_pat_from_env(args.pat_env)
+
+        try:
+            result = write_outbox(
+                bundle=args.bundle,
+                write_all_validated=args.all_validated,
+                dry_run=args.dry_run,
+                org_url=org_url,
+                project=project,
+                pat=pat,
+                api_version=args.api_version,
+                area_override=args.area,
+                iteration_override=args.iteration,
+                policy_dir=Path(args.policy_dir),
+                generated_dir=Path(args.generated_dir),
+                outbox_root=Path(args.outbox_root),
+            )
+        except Exception as exc:  # noqa: BLE001 - CLI surface should return actionable errors
+            print(f"write: {exc}", file=sys.stderr)
+            return 2
+
+        save_cli_context(
+            _merge_context(
+                context,
+                org_url=org_url,
+                project=project,
+                team=args.team,
+                current_iteration=args.current_iteration,
+            )
+        )
+
+        mode = "dry-run" if result["dry_run"] else "write"
+        print(
+            f"Write run ({mode}): {result['processed_count']} processed, "
+            f"{result['succeeded_count']} succeeded, {result['failed_count']} failed"
+        )
+        for entry in result["results"]:
+            if entry["result"] == "passed":
+                message = f"PASS {entry['bundle_path']}"
+                if entry["moved_bundle_path"]:
+                    message += f" -> {entry['moved_bundle_path']}"
+                print(message)
+            else:
+                print(f"FAIL {entry['bundle_path']}: {entry['error']}")
+
+            for op in entry["operations"]:
+                line = f"  {op['method']} {op['url']}"
+                if op.get("local_id"):
+                    line += f" (local_id={op['local_id']})"
+                print(line)
+        print(f"Audit: {result['audit_path']}")
+        return 0 if result["strict_ready"] else 2
 
     parser.print_help()
     return 2

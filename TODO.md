@@ -17,6 +17,8 @@
   - Validation uses `wit_map.yaml` to check existence and to drive writer endpoints.
 - [X] Current gap: `field_policy.yaml` is not yet wired into `adoctl contract export`, so updating it will not yet show up in `agent_contract.yaml` automatically. This is important so the user can modifiy the policy yml and the changes will propagate throughout the system. Here is the order of importance. (1) Anything **required** by `wit_contract.yaml` takes precedence over `field_policy.yaml`. For example, if a work item has a required field in wit contract and field does not list it as required, update the `field_policy.yaml` so that it matches wit contract. However, if wit_contract does not specify that a field is required, then field_policy can make this tighter by saying it is required. The backward modification is not required.
 - [X] Given the descriptions and context work item in `./docs`, update the yaml files in `./policy` to match what is specified in `./docs`. More explicitly, update `field_policy.yaml` based on the following specifications: `Blockers`, `Critical-Business-Decisions`, `Features`, `Iterations`, `Key-Results`, `Linking`, `Risks`, `User-Stories`, and `Work-Items` in `./docs`. 
+- [X] During Milestone 3, we ran into a design issue regarding local ids for work items created vs ADO generated work item ids. We want to resolve this issue with this update. Our goal is to keep ADO work item ids for all work items with such an id. That means, as soon as a work item is written to ADO and a work item is received, we want to store that work item id locally with the newly created work item. This will resolve the constant work to remap local to ADO. Another feature of this would be that all locally stored work items have either a local id or a ADO wit id. If they have a local id that means they have not been written to ADO yet and these would be the ones to process first. Additionally, with work item ids stored, linking will be much easier.
+
 
 ## Implementation Plan (Phased Milestones)
 
@@ -34,44 +36,43 @@ Exit criteria:
 
 ### Milestone 2: Outbox Validate (schema → policy → metadata)
 
-- Implement `adoctl outbox validate`:
-  - JSON Schema validation using `schema/bundle.schema.json`
-  - Policy checks:
-    - only parent-child
-    - no double nesting
-    - max depth 2
-    - required tags (if configured)
-    - user story title format rule
-    - bundle-local uniqueness of `local_id`
-  - Metadata checks:
-    - canonical types map to valid ADO WIT names
-    - canonical fields map to known ADO fields for that WIT
-    - area/iteration exists in generated paths
-- Emit `outbox/failed/<bundle>.report.yaml` describing failures.
+- [X] Implement `adoctl outbox validate`:
+  - [X] JSON Schema validation using `schema/bundle.schema.json`
+  - [X] Policy checks:
+    - [X] only parent-child
+    - [X] no double nesting
+    - [X] max depth 2
+    - [X] required tags (if configured)
+    - [X] bundle-local uniqueness of `local_id`
+  - [X] Metadata checks:
+    - [X] canonical types map to valid ADO WIT names
+    - [X] canonical fields map to known ADO fields for that WIT
+    - [X] area/iteration exists in generated paths
+- [X] Emit `outbox/failed/<bundle>.report.yaml` describing failures.
 
 Exit criteria:
 
-- A “bad” bundle never reaches `outbox/validated/`.
-- The report is unambiguous and actionable.
+- [X] A “bad” bundle never reaches `outbox/validated/`.
+- [X] The report is unambiguous and actionable.
 
 ### Milestone 3: Write Engine + Audit (dry-run first)
 
-- Implement ADO writer:
-  - `--dry-run` prints resolved plan (no network writes)
-  - Real write:
-    - create Features first
-    - create User Stories next, link to parent via hierarchy link
-  - Strictly use reference names from generated metadata and mappings (no guessing).
-- Audit:
-  - record request payloads (redacted) + response IDs
-  - record local_id → ado_id mapping
-  - record failure reason and stop
+- [X] Implement ADO writer:
+  - [X] `--dry-run` prints resolved plan (no network writes). The resolved plan includes a structured output of each url called with each method to ensure the API endpoints are being called correctly. This has to be validated before moving to testing the real write.  
+  - [X] Real write:
+    - [X] create Features first.
+    - [X] create User Stories next, link to parent via hierarchy link.
+  - [X] Strictly use reference names from generated metadata and mappings (no guessing).
+- [X] Audit:
+  - [X] record request payloads (redacted) + response IDs
+  - [X] record local_id → ado_id mapping
+  - [X] record failure reason and stop
 
 Exit criteria:
 
-- Writes stop on first failure.
-- Audit exists for every run.
-- Linking uses parent-child only.
+- [X] Writes stop on first failure.
+- [X] Audit exists for every run.
+- [X] Linking uses parent-child only.
 
 ### Milestone 4: “Sprint Goals” UX and Iteration Resilience
 
@@ -109,11 +110,11 @@ Exit criteria:
 
 ## Open Questions (Need Decisions Before Writer Is “Production Safe”)
 
-- Exact process template: confirm the ADO WIT names for “Feature” and “User Story” equivalents.
-- Field ownership: decide which canonical fields you allow (`field_map.yaml`) and which are required (`field_policy.yaml`).
-- Tagging conventions: require `bundle_id` tag? KR tags? sprint tag?
-- Auth constraints: PAT-only for MVP is assumed; confirm storage policy (env var only recommended).
-- Rollback policy: if partial writes occur, is cleanup allowed or do we only stop and audit?
+- [X] Exact process template: located in `config/generated/wit_contracts/feature.yaml` and `config/generated/wit_contracts/user_story.yaml`, respecitvely.
+- [X] Field ownership: decide which canonical fields you allow (`field_map.yaml`) and which are required (`field_policy.yaml`).
+- [X] Tagging conventions: not required.
+- [X] Auth constraints: PAT-only for MVP is assumed; storage policy env var only.
+- [ ] Rollback policy: if partial writes occur, is cleanup allowed or do we only stop and audit?
 
 ## Efficiency Notes (Pragmatic)
 

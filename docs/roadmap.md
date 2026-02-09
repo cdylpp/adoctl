@@ -59,7 +59,7 @@ Validation order (fail-fast, zero writes on any failure):
 1. Schema validation (JSON Schema).
    1. Must provide feedback on proper validation if this fails.
    2. Still continues on the rest of the work items.
-2. Policy validation (link rules, required tags/fields, title format).
+2. Policy validation (link rules, required tags/fields, local id uniqueness).
    1. If fails: should provide instructions on what to fix.
 3. Metadata validation (ADO feasibility):
    - work item types exist
@@ -132,7 +132,7 @@ Add a CLI command:
     - allowed canonical `fields` keys + descriptions
     - required tags conventions
     - link rules (parent-child only)
-    - any title format rules
+    - semantic writing standards from policy
     - optionally: a minimal subset of WIT required fields (Title, Description, Acceptance Criteria, etc.)
 
 This enables “resilience under change”:
@@ -191,4 +191,3 @@ Proposed packages:
   - Redaction utilities
 
 Key rule: validation must not depend on writer; writer must depend on validation outputs.
-
