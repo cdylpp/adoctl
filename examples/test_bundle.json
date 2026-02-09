@@ -1,0 +1,514 @@
+{
+  "schema_version": "1.0",
+  "bundle_id": "intake-automation-sprint-2026-02",
+  "source": {
+    "agent_name": "Claude-3.7-Sonnet",
+    "prompt_id": "intake-automation-decomposition-v1",
+    "generated_at": "2026-02-09T06:15:00Z"
+  },
+  "context": {
+    "project": "Black Lagoon",
+    "team": "Platform Engineering",
+    "sprint": "2026-Q1",
+    "default_area_path": "Black Lagoon\\Platform Engineering\\Automation",
+    "default_iteration_path": "Black Lagoon\\Platform Engineering",
+    "objective": "Automate project intake from Excel to ADO with governance tracking and visibility dashboards",
+    "scope": "Python ingestion script, custom ADO work item type, and Power BI dashboard for intake metrics"
+  },
+  "work_items": [
+    {
+      "local_id": "F001",
+      "type": "Feature",
+      "title": "Python script to clean/transform Excel requests into ADO work items",
+      "description": "As a system operator, I need an automated ingestion pipeline that reads standardized Excel intake requests and creates ADO Project Request work items, so that manual re-entry is eliminated and intake processing is consistent and reliable.\n\n**Context:** The intake process currently relies on manual transcription from Excel submissions into ADO, creating delays, inconsistency, and potential data loss. This feature automates the entire flow from Excel table to ADO work item creation.\n\n**Constraints:**\n- Must handle invalid/incomplete rows gracefully without partial failures\n- Must be idempotent to support safe re-runs\n- Must authenticate to ADO using approved methods (PAT/service principal/managed identity)\n- Excel schema must be finalized before implementation begins\n\n**Definition of Done:**\n- Script reads from defined Excel table structure with documented schema\n- Cleans and validates required fields with clear error reporting for invalid rows\n- Creates Project Request work items in ADO with correct field mappings\n- Implements idempotency to prevent duplicate work item creation\n- Includes comprehensive logging (run summary + row-level outcomes)\n- Provides operator documentation (execution steps, input/output locations, troubleshooting)\n- Contains basic test coverage (valid row, missing required field, malformed date, duplicate row)\n\n**Dependencies:**\n- dependency:F002 (Project Request work item type must exist or temporary surrogate defined)\n- Finalized Excel schema/contract (table name, columns, types, allowed values)\n- ADO authentication method approved and configured\n\n**Release Plan:** NOW (Quarter month 1)",
+      "acceptance_criteria": [
+        "Script successfully reads Excel table from defined document library location",
+        "All validation rules enforce data quality before work item creation",
+        "Error reports clearly identify invalid rows with actionable failure reasons",
+        "Project Request work items contain all mapped fields from Excel source",
+        "Re-running script does not create duplicate work items",
+        "Logs capture execution summary and row-level processing outcomes",
+        "Operator documentation enables independent execution and troubleshooting",
+        "Test suite validates happy path and common failure scenarios"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "priority": 1,
+        "risk": "Medium",
+        "state": "New",
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "EXTERNAL_KR_INTAKE_AUTOMATION"
+      }
+    },
+    {
+      "local_id": "US001",
+      "type": "UserStory",
+      "title": "Define and lock Excel intake contract (schema + example)",
+      "description": "As a system operator, I need a clearly defined Excel table schema for project intake requests, so that the ingestion script can reliably parse and process requests without ambiguity.\n\n**Context:** The ingestion script requires a stable contract defining the exact structure of intake Excel files, including column names, data types, required fields, and allowed values. Without this contract, the script cannot validate or map data correctly.\n\n**Technical Notes:**\n- Document table name and worksheet name explicitly\n- Define required vs optional fields with clear business rules\n- Specify data type expectations (string/multiline/choice/datetime)\n- List allowed values for choice fields (e.g., Priority: High/Medium/Low)\n- Store example file in agreed SharePoint/Doc Library location\n- Align schema with intake form fields (title, sponsoring org, problem statement, value, priority, new/existing, desired outcome, desired completion date, created by/on)",
+      "acceptance_criteria": [
+        "(AC 1). Given the intake contract document, when reviewing the schema definition, then the Excel table name and worksheet name are explicitly documented",
+        "(AC 2). Given the column list, when examining each column, then it includes required/optional designation, data type, and allowed values for choice fields",
+        "(AC 3). Given the agreed document library location, when accessing the location, then a sample Excel file exists matching the documented schema exactly",
+        "(AC 4). Given the intake form field list, when comparing to the Excel schema, then all intake form fields map to documented Excel columns"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 1,
+        "state": "New",
+        "story_points": 3,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F001"
+      }
+    },
+    {
+      "local_id": "US002",
+      "type": "UserStory",
+      "title": "Implement field cleaning and validation layer",
+      "description": "As a system operator, I need intake rows to be cleaned and validated before creating work items, so that only high-quality, correctly formatted requests enter ADO.\n\n**Context:** Raw Excel data may contain inconsistent formatting, invalid values, or missing required fields. A validation layer ensures data quality by normalizing values and blocking invalid rows with actionable error messages.\n\n**Technical Notes:**\n- Enforce required fields per intake contract\n- Trim leading/trailing whitespace from string fields\n- Normalize choice values to canonical set (case-insensitive matching)\n- Parse and validate date/datetime fields with clear format expectations\n- Generate structured error output including row identifier, field name, and failure reason\n- Prevent ADO work item creation for any row failing validation",
+      "acceptance_criteria": [
+        "(AC 1). Given an Excel row with missing required fields, when validation executes, then the row is rejected and error output identifies missing fields by name",
+        "(AC 2). Given string fields with leading/trailing whitespace, when cleaning executes, then whitespace is trimmed and normalized values are used",
+        "(AC 3). Given choice fields with inconsistent casing, when normalization executes, then values are matched to canonical choice list case-insensitively",
+        "(AC 4). Given date fields with invalid format, when parsing executes, then the row is rejected with clear date format error message",
+        "(AC 5). Given validation failures, when script completes, then no ADO work items are created for invalid rows",
+        "(AC 6). Given validation errors, when reviewing error output, then each error includes row identifier, field name, and actionable failure reason"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 1,
+        "state": "New",
+        "story_points": 5,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F001"
+      }
+    },
+    {
+      "local_id": "US003",
+      "type": "UserStory",
+      "title": "Configure field mapping from Excel to ADO Project Request",
+      "description": "As a developer, I need a documented and configurable mapping from Excel fields to ADO fields, so that the ingestion script creates consistent, correctly populated work items.\n\n**Context:** The script must translate Excel column names to ADO field reference names while preserving data integrity, especially for multi-line content. A version-controlled mapping configuration ensures consistency and maintainability.\n\n**Technical Notes:**\n- Create mapping definition (code config or external mapping file)\n- Map all required fields and intended optional fields\n- Preserve line breaks in multi-line fields within ADO platform limits\n- Define defaults for optional fields where appropriate\n- Version-control mapping configuration\n- Align with canonical field keys from agent contract",
+      "acceptance_criteria": [
+        "(AC 1). Given the mapping configuration, when reviewing field definitions, then all required Excel columns map to ADO Project Request fields",
+        "(AC 2). Given multi-line Excel content, when writing to ADO, then line breaks are preserved within ADO field limits",
+        "(AC 3). Given the mapping configuration, when accessing the file, then it is version-controlled and referenced by the script",
+        "(AC 4). Given optional Excel fields with missing values, when mapping executes, then appropriate defaults are applied per configuration"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 1,
+        "state": "New",
+        "story_points": 3,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F001"
+      }
+    },
+    {
+      "local_id": "US004",
+      "type": "UserStory",
+      "title": "Create ADO Project Request work items from validated rows",
+      "description": "As a system operator, I need valid Excel rows to automatically create Project Request work items in ADO, so that requests flow into the backlog without manual entry.\n\n**Context:** After validation and mapping, the script must authenticate to ADO and create work items with complete field data, capturing detailed outcomes for operational visibility.\n\n**Technical Notes:**\n- Use authenticated ADO connection (PAT/service principal/managed identity)\n- Create Project Request work items in target ADO project\n- Populate title, description, priority, created by/on, and all mapped fields\n- Generate run summary with total rows processed, created count, validation-failed count, creation-failed count\n- Produce actionable error output for creation failures including row ID and reason",
+      "acceptance_criteria": [
+        "(AC 1). Given a validated Excel row, when creation executes, then a Project Request work item is created in the target ADO project",
+        "(AC 2). Given created work items, when reviewing field values, then title, description, priority, and created metadata are populated correctly",
+        "(AC 3). Given script completion, when reviewing run summary, then it includes total rows processed, created count, validation-failed count, and creation-failed count",
+        "(AC 4). Given creation failures, when reviewing error output, then each failure includes row identifier and actionable failure reason"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 1,
+        "state": "New",
+        "story_points": 5,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F001"
+      }
+    },
+    {
+      "local_id": "US005",
+      "type": "UserStory",
+      "title": "Add idempotency and duplicate protection",
+      "description": "As a system operator, I need the script to be safe to re-run without duplicating requests, so that operational runs are resilient and repeatable.\n\n**Context:** Operational scenarios require re-running the script (failures, partial runs, data corrections). Without idempotency, re-runs create duplicate work items, polluting the backlog and breaking reporting.\n\n**Technical Notes:**\n- Implement stable unique key strategy (Excel row GUID or composite key)\n- Document key generation/identification approach\n- Define duplicate handling behavior (Skip, Update, or Flag)\n- Check for existing work items before creation using stable key\n- Report duplicates separately in run summary\n- Ensure duplicate detection works across script executions",
+      "acceptance_criteria": [
+        "(AC 1). Given each Excel row, when processing begins, then a stable unique identifier is assigned or retrieved per documented approach",
+        "(AC 2). Given a previously processed row, when re-running the script, then no duplicate work item is created",
+        "(AC 3). Given duplicate detection, when encountering existing work items, then the defined behavior (Skip/Update/Flag) is executed consistently",
+        "(AC 4). Given script completion, when reviewing run summary, then duplicates are reported separately from new creations"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 1,
+        "state": "New",
+        "story_points": 5,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F001"
+      }
+    },
+    {
+      "local_id": "US006",
+      "type": "UserStory",
+      "title": "Add operational logging and runbook",
+      "description": "As a system operator, I need logs and a simple runbook for the ingestion script, so that the solution can be operated and troubleshot consistently.\n\n**Context:** Production operation requires comprehensive logging for audit, troubleshooting, and compliance. A runbook enables consistent execution by any authorized operator.\n\n**Technical Notes:**\n- Log execution timestamp, environment, and target project info\n- Capture row-level processing outcomes\n- Include error details for all failures\n- Write logs to agreed location with consistent naming convention\n- Create runbook covering prerequisites (auth, access, file location), execution steps, and common failure modes with resolution guidance",
+      "acceptance_criteria": [
+        "(AC 1). Given script execution, when reviewing logs, then they include execution timestamp, environment info, and target project",
+        "(AC 2). Given processing outcomes, when reviewing logs, then row-level results are captured with success/failure status",
+        "(AC 3). Given failures, when reviewing logs, then error details include row identifier, field context, and failure reason",
+        "(AC 4). Given log output, when checking storage location, then logs use consistent naming convention in agreed location",
+        "(AC 5). Given the runbook, when following execution steps, then an operator can successfully run the script with documented prerequisites",
+        "(AC 6). Given common failures, when consulting the runbook, then resolution guidance is provided for typical error scenarios"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 2,
+        "state": "New",
+        "story_points": 3,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F001"
+      }
+    },
+    {
+      "local_id": "F002",
+      "type": "Feature",
+      "title": "New ADO work item type: Project Request",
+      "description": "As a product owner, I need a dedicated Project Request work item type that matches the intake form structure and supports governance tracking, so that intake requests are captured consistently and enable reliable reporting and SLA management.\n\n**Context:** The current ADO process lacks a specialized work item type for intake requests, forcing teams to use generic types that don't capture intake-specific fields (sponsoring org, problem statement, value justification, planning dates, risk). This creates inconsistent data capture and reporting gaps.\n\n**Constraints:**\n- Requires permissions to edit ADO process/work item types\n- Field naming must align with reporting conventions\n- Workflow states must support intake-to-delivery lifecycle\n- Form layout must be intuitive for non-technical requesters\n\n**Definition of Done:**\n- Project Request work item type exists in target ADO project/process\n- All required fields implemented (title, status, projected planning date, risk, priority, description, intake form fields)\n- Workflow states and transitions defined and configured\n- Form layout is usable with logical field grouping and clear required field indicators\n- Permissions and visibility configured correctly\n- Documentation exists covering field definitions and workflow\n\n**Dependencies:**\n- ADO process customization permissions\n- Agreement on workflow states and transition rules\n- Field naming conventions established\n\n**Release Plan:** NOW (Quarter month 1)",
+      "acceptance_criteria": [
+        "Project Request work item type is selectable in ADO project",
+        "All governance fields (status, projected planning date, risk, priority) are implemented",
+        "All intake form fields (sponsoring org, problem statement, value, new/existing, desired outcome, desired completion date, created by/on) are implemented",
+        "Required field validation prevents incomplete work item creation",
+        "Workflow states support intake lifecycle from submission to planning",
+        "Form layout groups related fields logically",
+        "Documentation explains field meanings and workflow states",
+        "Permissions allow intended users to create and transition work items"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "priority": 1,
+        "risk": "Low",
+        "state": "New",
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "EXTERNAL_KR_INTAKE_AUTOMATION"
+      }
+    },
+    {
+      "local_id": "US007",
+      "type": "UserStory",
+      "title": "Define Project Request schema and field dictionary",
+      "description": "As a product owner, I need a defined field dictionary for the Project Request work item type, so that intake requests are captured consistently and support governance and reporting requirements.\n\n**Context:** Before implementing the work item type, the complete field schema must be defined including field names, types, required/optional status, and allowed values for choice fields.\n\n**Technical Notes:**\n- Define core governance fields: Title, Status, Projected Planning Date, Risk, Priority, Description\n- Define intake form fields: Sponsoring Organization, Problem Statement, Value, Priority Justification, New or Existing (choice), Desired Outcome, Desired Completion Date, Created By, Created On\n- Specify data types: string, multiline, choice, datetime\n- Mark required vs optional fields\n- List allowed values for choice fields (Priority, Risk, New/Existing, Status)",
+      "acceptance_criteria": [
+        "(AC 1). Given the field dictionary, when reviewing governance fields, then Title, Status, Projected Planning Date, Risk, Priority, and Description are defined with correct types",
+        "(AC 2). Given the field dictionary, when reviewing intake fields, then Sponsoring Organization, Problem Statement, Value, Priority Justification, New or Existing, Desired Outcome, Desired Completion Date, Created By, and Created On are defined",
+        "(AC 3). Given each field definition, when examining metadata, then data type (string/multiline/choice/datetime) and required/optional status are specified",
+        "(AC 4). Given choice fields, when reviewing allowed values, then complete value lists are documented for Priority, Risk, New/Existing, and Status"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 1,
+        "state": "New",
+        "story_points": 3,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F002"
+      }
+    },
+    {
+      "local_id": "US008",
+      "type": "UserStory",
+      "title": "Implement Project Request work item type in ADO process",
+      "description": "As a developer, I need the Project Request work item type implemented in ADO, so that users can create and manage requests using the dedicated intake format.\n\n**Context:** Using ADO process customization, create the new work item type with all defined fields, correct types, and required field enforcement.\n\n**Technical Notes:**\n- Create Project Request work item type in target ADO project process\n- Add all fields from field dictionary with correct reference names\n- Configure choice field allowed values\n- Set required field rules\n- Verify work item type appears in project work item type list",
+      "acceptance_criteria": [
+        "(AC 1). Given the target ADO project, when viewing available work item types, then Project Request appears as a selectable type",
+        "(AC 2). Given the Project Request type, when examining fields, then all defined fields exist with correct data types",
+        "(AC 3). Given choice fields, when creating a work item, then only allowed values are selectable",
+        "(AC 4). Given required fields, when attempting to save with missing required data, then validation prevents work item creation with clear error message"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 1,
+        "state": "New",
+        "story_points": 5,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F002"
+      }
+    },
+    {
+      "local_id": "US009",
+      "type": "UserStory",
+      "title": "Define workflow states and transition rules (v1)",
+      "description": "As a team lead, I need a clear workflow for Project Request items, so that requests move through intake states consistently and are reportable.\n\n**Context:** Project Requests require a defined lifecycle from initial submission through triage, planning, execution, and completion. The v1 workflow must support intake governance while remaining simple enough for initial adoption.\n\n**Technical Notes:**\n- Define v1 state model (example: New → Triaged → Planned → In Progress → Done)\n- Configure allowed state transitions\n- Document any gating requirements for state changes (fields required to transition)\n- Align state names with dashboard reporting buckets\n- Ensure workflow supports intake SLA tracking",
+      "acceptance_criteria": [
+        "(AC 1). Given the workflow definition, when reviewing states, then the v1 state model is documented and agreed by the team",
+        "(AC 2). Given state transitions, when testing in ADO, then only allowed transitions are permitted",
+        "(AC 3). Given gating requirements, when transitioning states, then required fields are enforced per documented rules",
+        "(AC 4). Given dashboard requirements, when comparing state names, then workflow states align with reporting bucket definitions"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 1,
+        "state": "New",
+        "story_points": 5,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F002"
+      }
+    },
+    {
+      "local_id": "US010",
+      "type": "UserStory",
+      "title": "Design Project Request form layout",
+      "description": "As a requester/operator, I need a clean, structured work item form, so that I can enter and review request data efficiently.\n\n**Context:** The work item form layout significantly impacts user experience and data quality. Logical grouping, clear labeling, and prominent required fields reduce errors and improve adoption.\n\n**Technical Notes:**\n- Organize fields into logical sections: Request Summary, Business Need, Scheduling/Governance, Metadata\n- Make required fields prominent with clear indicators\n- Ensure multi-line fields are readable and not buried\n- Test form usability with representative users\n- Validate that complete request creation is possible without navigation or guesswork",
+      "acceptance_criteria": [
+        "(AC 1). Given the work item form, when reviewing layout, then fields are organized into logical sections (Request Summary, Business Need, Scheduling/Governance, Metadata)",
+        "(AC 2). Given required fields, when viewing the form, then they are prominently displayed with clear required indicators",
+        "(AC 3). Given multi-line fields, when entering content, then fields render with adequate space and readability",
+        "(AC 4). Given a new requester, when creating a work item, then they can complete all required fields without navigating away or guessing field meanings"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 2,
+        "state": "New",
+        "story_points": 3,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F002"
+      }
+    },
+    {
+      "local_id": "US011",
+      "type": "UserStory",
+      "title": "Document Project Request type for operators and requesters",
+      "description": "As a stakeholder, I need a short reference page describing Project Request fields and workflow, so that expectations are clear and usage is consistent.\n\n**Context:** Without documentation, users will misunderstand field meanings, use incorrect values, or skip important fields. Clear documentation improves data quality and reduces support burden.\n\n**Technical Notes:**\n- Create wiki page or equivalent reference documentation\n- Document purpose of Project Request work item type\n- Explain field definitions and required fields\n- Describe workflow states and what each state means\n- Make documentation accessible to intended audiences",
+      "acceptance_criteria": [
+        "(AC 1). Given the documentation, when reviewing content, then it explains the purpose of Project Request work item type",
+        "(AC 2). Given field definitions, when consulting documentation, then each field's meaning and required status are clearly explained",
+        "(AC 3). Given workflow states, when reviewing documentation, then each state's meaning and transition criteria are described",
+        "(AC 4). Given intended audiences, when accessing documentation, then it is available through standard channels (wiki, SharePoint, etc.)"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 2,
+        "state": "New",
+        "story_points": 2,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F002"
+      }
+    },
+    {
+      "local_id": "F003",
+      "type": "Feature",
+      "title": "Dashboard visualizing Project Request status and time-in-status tracking",
+      "description": "As a team lead, I need a dashboard showing Project Request status distribution and time-in-status metrics, so that intake volume, bottlenecks, and SLA performance are transparent and actionable.\n\n**Context:** Without visibility into intake request status and cycle time, teams cannot identify bottlenecks, manage capacity, or meet SLA commitments. A dashboard fed by ADO data provides real-time transparency.\n\n**Constraints:**\n- Must use approved ADO data source (Analytics/OData or approved alternative)\n- Time-in-status calculations require state change history\n- Dashboard must support filtering for practical analysis\n- Refresh cadence must be reliable and documented\n\n**Definition of Done:**\n- Dashboard is fed from validated ADO data source\n- Displays current count of requests by status\n- Shows time-in-status metrics (average, median, aging)\n- Supports filtering by date range, priority, sponsoring org\n- Refresh cadence is established and reliable\n- Validation performed on sample set (manual spot-check vs ADO history)\n- Usage documentation exists\n\n**Dependencies:**\n- dependency:F002 (Project Request work item type with stable workflow states)\n- Data access method approved (ADO Analytics/OData vs REST vs warehouse)\n- Ability to compute time-in-state from revision history or analytics snapshots\n\n**Release Plan:** NEAR (Quarter month 2)",
+      "acceptance_criteria": [
+        "Dashboard displays count of Project Requests by current status",
+        "Dashboard shows time-in-status metrics including average, median, and aging for current items",
+        "Filters work correctly for date range, priority, and sponsoring organization",
+        "Data source is validated and supports scheduled refresh",
+        "Time-in-status calculations are validated against ADO history for sample items",
+        "Dashboard is published with appropriate access permissions",
+        "Usage documentation explains chart meanings and metric definitions",
+        "Refresh schedule is configured and executes successfully"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "priority": 2,
+        "risk": "Medium",
+        "state": "New",
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "EXTERNAL_KR_INTAKE_AUTOMATION"
+      }
+    },
+    {
+      "local_id": "US012",
+      "type": "UserStory",
+      "title": "Select and validate ADO reporting data source",
+      "description": "As a BI analyst, I need a validated ADO data source for reporting, so that the dashboard is reliable and refreshable.\n\n**Context:** Multiple data access methods exist for ADO (Analytics/OData, REST API, data warehouse). The chosen method must support the required metrics, refresh cadence, and organizational data governance policies.\n\n**Technical Notes:**\n- Evaluate ADO Analytics/OData as preferred approach\n- Test connectivity and query performance\n- Confirm data source can retrieve Project Request items with status and created date\n- Verify scheduled refresh support (if applicable)\n- Document chosen approach and access method",
+      "acceptance_criteria": [
+        "(AC 1). Given data source options, when evaluation completes, then the chosen method and rationale are documented",
+        "(AC 2). Given the chosen data source, when executing test query, then Project Request items are successfully retrieved",
+        "(AC 3). Given test query results, when examining data, then current status/state and created date fields are available",
+        "(AC 4). Given refresh requirements, when testing connection, then scheduled refresh is supported by the chosen method"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 2,
+        "state": "New",
+        "story_points": 3,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F003"
+      }
+    },
+    {
+      "local_id": "US013",
+      "type": "UserStory",
+      "title": "Build reporting dataset/model for Project Requests",
+      "description": "As a BI analyst, I need a curated dataset/model for Project Requests, so that visuals are consistent and calculations are centralized.\n\n**Context:** A well-structured dataset/model serves as the foundation for all dashboard visuals, ensuring consistent definitions, efficient queries, and maintainable calculations.\n\n**Technical Notes:**\n- Include core dimensions: work item ID, title, status, priority, sponsoring organization, created date, desired completion date\n- Include attributes for time-in-status calculations (state change timestamps or equivalent)\n- Support filtering by priority, date range, and sponsoring org\n- Document time-in-status calculation method\n- Optimize for query performance",
+      "acceptance_criteria": [
+        "(AC 1). Given the dataset, when reviewing fields, then it includes work item ID, title, status, priority, sponsoring organization, created date, and desired completion date",
+        "(AC 2). Given time-in-status requirements, when examining dataset, then necessary timestamps or attributes for calculations are available",
+        "(AC 3). Given filtering requirements, when testing dataset, then slicers work correctly for priority, date range, and sponsoring organization",
+        "(AC 4). Given calculation requirements, when reviewing documentation, then the time-in-status calculation method is clearly documented"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 2,
+        "state": "New",
+        "story_points": 5,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F003"
+      }
+    },
+    {
+      "local_id": "US014",
+      "type": "UserStory",
+      "title": "Implement status bucket visuals showing counts by status",
+      "description": "As a stakeholder, I need to see requests bucketed by current status, so that I can quickly understand intake volume and distribution.\n\n**Context:** Status distribution provides immediate visibility into intake pipeline health, showing where requests accumulate and how work flows through the system.\n\n**Technical Notes:**\n- Create count visualizations grouped by status\n- Implement filters for date range (created), priority, and sponsoring organization\n- Ensure status labels match Project Request workflow state names\n- Use clear, accessible visual design",
+      "acceptance_criteria": [
+        "(AC 1). Given the dashboard, when viewing status visuals, then counts of Project Requests are displayed grouped by status",
+        "(AC 2). Given filtering requirements, when applying filters, then date range (created), priority, and sponsoring organization filters work correctly",
+        "(AC 3). Given workflow states, when comparing labels, then dashboard status labels match Project Request workflow state names exactly"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 2,
+        "state": "New",
+        "story_points": 3,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F003"
+      }
+    },
+    {
+      "local_id": "US015",
+      "type": "UserStory",
+      "title": "Implement time-in-status metrics with validation",
+      "description": "As a team lead, I need to see how long requests spend in each status, so that we can identify bottlenecks and manage SLAs.\n\n**Context:** Time-in-status metrics reveal process efficiency and bottlenecks. Accurate calculations require careful handling of state transitions and validation against source data.\n\n**Technical Notes:**\n- Calculate time in current status for active items (aging)\n- Calculate aggregate time-in-status metrics by status (average and median minimum)\n- Document calculation method including business days vs calendar days definition\n- Validate calculations against ADO revision history for at least 5 sample items\n- Handle edge cases (items that skip states, items with multiple transitions to same state)",
+      "acceptance_criteria": [
+        "(AC 1). Given active items, when viewing dashboard, then time in current status (aging) is displayed for each item",
+        "(AC 2). Given completed items, when viewing aggregate metrics, then average and median time-in-status are shown for each status",
+        "(AC 3). Given calculation documentation, when reviewing method, then it clearly defines whether business days or calendar days are used",
+        "(AC 4). Given validation requirements, when spot-checking calculations, then at least 5 items match ADO revision history within acceptable tolerance",
+        "(AC 5). Given edge cases, when items skip states or transition multiple times, then calculations handle these scenarios correctly per documented rules"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 2,
+        "state": "New",
+        "story_points": 8,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F003"
+      }
+    },
+    {
+      "local_id": "US016",
+      "type": "UserStory",
+      "title": "Publish dashboard with access and refresh configuration",
+      "description": "As a BI analyst, I need the dashboard published with the right access and refresh settings, so that stakeholders can reliably view current status.\n\n**Context:** A dashboard is only valuable if stakeholders can access it and trust that data is current. Proper publishing, permissions, and refresh configuration are essential for adoption.\n\n**Technical Notes:**\n- Publish to agreed workspace (Power BI workspace, Tableau server, etc.)\n- Configure permissions for intended audiences\n- Set up scheduled refresh (if applicable)\n- Add data freshness indicator (last refresh timestamp)\n- Test access from stakeholder accounts",
+      "acceptance_criteria": [
+        "(AC 1). Given the target workspace, when checking published dashboards, then the Project Request dashboard is available",
+        "(AC 2). Given intended audiences, when testing access, then stakeholders can view the dashboard without manual sharing workarounds",
+        "(AC 3). Given refresh requirements, when checking configuration, then scheduled refresh is configured and has succeeded at least once",
+        "(AC 4). Given data freshness concerns, when viewing dashboard, then a 'data last refreshed' indicator is visible"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 2,
+        "state": "New",
+        "story_points": 2,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F003"
+      }
+    },
+    {
+      "local_id": "US017",
+      "type": "UserStory",
+      "title": "Create dashboard usage reference guide",
+      "description": "As a stakeholder, I need a quick guide explaining the dashboard visuals and definitions, so that metrics are interpreted consistently.\n\n**Context:** Without clear definitions, stakeholders may misinterpret metrics, leading to incorrect decisions. A concise reference guide ensures consistent understanding.\n\n**Technical Notes:**\n- Document chart descriptions and purposes\n- Define status buckets as used in dashboard\n- Explain time-in-status and aging metrics\n- Describe available filters and recommended usage\n- Publish alongside dashboard (wiki, info page, embedded in dashboard)",
+      "acceptance_criteria": [
+        "(AC 1). Given the reference guide, when reviewing content, then it includes descriptions of all dashboard charts and their purposes",
+        "(AC 2). Given status definitions, when consulting the guide, then each status bucket used in the dashboard is clearly defined",
+        "(AC 3). Given time-in-status metrics, when reading definitions, then aging and aggregate time-in-status calculations are explained clearly",
+        "(AC 4). Given filtering capabilities, when reviewing the guide, then available filters and recommended usage patterns are documented",
+        "(AC 5). Given intended audiences, when accessing the dashboard, then the reference guide is available through standard channels (wiki, dashboard info page, etc.)"
+      ],
+      "fields": {
+        "area_path": "Black Lagoon\\Platform Engineering\\Automation",
+        "iteration_path": "Black Lagoon\\Platform Engineering",
+        "owner": "TBD",
+        "priority": 2,
+        "state": "New",
+        "story_points": 1,
+        "value_area": "Business"
+      },
+      "relations": {
+        "parent_local_id": "F003"
+      }
+    }
+  ]
+}
