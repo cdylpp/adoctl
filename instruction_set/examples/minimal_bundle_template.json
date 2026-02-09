@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "bundle_id": "2026-02-09_krX_sprintYY",
+  "source": {
+    "agent_name": "external-agent",
+    "prompt_id": "decompose-v1",
+    "generated_at": "2026-02-09T00:00:00Z"
+  },
+  "context": {
+    "project": "ProjectName",
+    "team": "TeamName",
+    "kr_id": "KR-123",
+    "sprint": "CY26-Q2-03",
+    "default_area_path": "ProjectName\\TeamName",
+    "default_iteration_path": "ProjectName\\TeamName\\SprintPath"
+  },
+  "work_items": [
+    {
+      "local_id": "F-001",
+      "type": "Feature",
+      "title": "Deliver measurable sprint objective outcome",
+      "description": "Feature description with objective context, constraints, and expected outcome.",
+      "acceptance_criteria": [
+        "Given valid prerequisites, when feature work is completed, then expected outcome is achieved."
+      ],
+      "fields": {},
+      "relations": {
+        "parent_local_id": "KR-123"
+      }
+    },
+    {
+      "local_id": "US-001",
+      "type": "UserStory",
+      "title": "Enable a specific user-facing capability",
+      "description": "User story description with clear capability and constraints.",
+      "acceptance_criteria": [
+        "Given preconditions, when the user performs the action, then the expected result occurs."
+      ],
+      "fields": {},
+      "relations": {
+        "parent_local_id": "F-001"
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "status": "blocked",
+  "reason": "missing_required_inputs",
+  "missing_inputs": [
+    "default_area_path",
+    "default_iteration_path",
+    "parent KR IDs for Feature relations"
+  ],
+  "violations": [
+    "Cannot resolve parent_local_id for Feature items without provided parent IDs.",
+    "Cannot safely set required path fields without context defaults."
+  ],
+  "next_action": "Provide missing inputs and retry decomposition."
+}
