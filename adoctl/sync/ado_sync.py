@@ -4,7 +4,7 @@ import datetime as dt
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from adoctl.ado_client.http import ado_get, ado_post_json
 from adoctl.ado_client.models import ADOConfig
@@ -103,11 +103,6 @@ def _filter_team_scoped_paths(paths: List[str], project: str, team_name: str) ->
         if lowered == prefix or lowered.startswith(prefix + "\\"):
             scoped.append(normalized)
     return sorted(set(scoped))
-
-
-def _chunked(items: List[int], size: int) -> Iterator[List[int]]:
-    for idx in range(0, len(items), size):
-        yield items[idx : idx + size]
 
 
 def _parse_parent_id_from_relations(relations: Any) -> Optional[int]:
@@ -290,7 +285,6 @@ def _sync_planning_semantics(
 
     work_items_details: List[Dict[str, Any]] = []
     if objective_kr_ids:
-        work_items_url = join_url(cfg.org_url, cfg.project, "_apis", "wit", "workitems")
         requested_fields = ",".join(
             [
                 "System.Id",
@@ -303,19 +297,18 @@ def _sync_planning_semantics(
                 "System.Parent",
             ]
         )
-        for id_chunk in _chunked(objective_kr_ids, 200):
-            chunk_payload = ado_get(
+        for work_item_id in objective_kr_ids:
+            work_item_url = join_url(cfg.org_url, cfg.project, "_apis", "wit", "workitems", str(work_item_id))
+            work_item_payload = ado_get(
                 cfg,
-                work_items_url,
+                work_item_url,
                 params={
-                    "ids": ",".join(str(item) for item in id_chunk),
                     "fields": requested_fields,
                     "$expand": "relations",
                 },
             )
-            chunk_items = chunk_payload.get("value", [])
-            if isinstance(chunk_items, list):
-                work_items_details.extend([item for item in chunk_items if isinstance(item, dict)])
+            if isinstance(work_item_payload, dict):
+                work_items_details.append(work_item_payload)
 
     parsed_objective_kr = _parse_objective_and_kr_items(work_items_details)
     planning_context = {

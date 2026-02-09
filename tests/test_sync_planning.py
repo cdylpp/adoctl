@@ -48,31 +48,34 @@ class TestPlanningSync(unittest.TestCase):
                 return {"value": [{"path": f"{project_name}\\AppDev"}]}
             if normalized.endswith("/appdev/_apis/work/teamsettings/teamfieldvalues"):
                 return {"value": [{"value": f"{project_name}\\AppDev"}]}
-            if normalized.endswith("/_apis/wit/workitems"):
+            if normalized.endswith("/_apis/wit/workitems/100"):
+                self.assertIsInstance(params, dict)
+                self.assertEqual(params.get("$expand"), "relations")
+                self.assertIn("System.WorkItemType", str(params.get("fields")))
                 return {
-                    "value": [
-                        {
-                            "id": 100,
-                            "fields": {
-                                "System.WorkItemType": "Objective",
-                                "System.Title": "Improve onboarding",
-                                "System.State": "New",
-                                "System.AreaPath": project_name,
-                                "System.IterationPath": project_name,
-                            },
-                        },
-                        {
-                            "id": 101,
-                            "fields": {
-                                "System.WorkItemType": "Key Result",
-                                "System.Title": "Reduce time to value",
-                                "System.State": "New",
-                                "System.AreaPath": project_name,
-                                "System.IterationPath": project_name,
-                                "System.Parent": 100,
-                            },
-                        },
-                    ]
+                    "id": 100,
+                    "fields": {
+                        "System.WorkItemType": "Objective",
+                        "System.Title": "Improve onboarding",
+                        "System.State": "New",
+                        "System.AreaPath": project_name,
+                        "System.IterationPath": project_name,
+                    },
+                }
+            if normalized.endswith("/_apis/wit/workitems/101"):
+                self.assertIsInstance(params, dict)
+                self.assertEqual(params.get("$expand"), "relations")
+                self.assertIn("System.WorkItemType", str(params.get("fields")))
+                return {
+                    "id": 101,
+                    "fields": {
+                        "System.WorkItemType": "Key Result",
+                        "System.Title": "Reduce time to value",
+                        "System.State": "New",
+                        "System.AreaPath": project_name,
+                        "System.IterationPath": project_name,
+                        "System.Parent": 100,
+                    },
                 }
             raise AssertionError(f"Unexpected GET URL in test: {url}")
 
