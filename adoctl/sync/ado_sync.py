@@ -304,7 +304,6 @@ def _sync_planning_semantics(
                 work_item_url,
                 params={
                     "fields": requested_fields,
-                    "$expand": "relations",
                 },
             )
             if isinstance(work_item_payload, dict):

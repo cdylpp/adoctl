@@ -50,7 +50,7 @@ class TestPlanningSync(unittest.TestCase):
                 return {"value": [{"value": f"{project_name}\\AppDev"}]}
             if normalized.endswith("/_apis/wit/workitems/100"):
                 self.assertIsInstance(params, dict)
-                self.assertEqual(params.get("$expand"), "relations")
+                self.assertNotIn("$expand", params)
                 self.assertIn("System.WorkItemType", str(params.get("fields")))
                 return {
                     "id": 100,
@@ -64,7 +64,7 @@ class TestPlanningSync(unittest.TestCase):
                 }
             if normalized.endswith("/_apis/wit/workitems/101"):
                 self.assertIsInstance(params, dict)
-                self.assertEqual(params.get("$expand"), "relations")
+                self.assertNotIn("$expand", params)
                 self.assertIn("System.WorkItemType", str(params.get("fields")))
                 return {
                     "id": 101,
