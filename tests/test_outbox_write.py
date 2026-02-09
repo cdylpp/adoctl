@@ -242,6 +242,45 @@ class TestOutboxWrite(unittest.TestCase):
             self.assertEqual(registry_index["F-001"]["ado_id"], 7001)
             self.assertEqual(registry_index["US-001"]["ado_id"], 7002)
 
+    def test_write_feature_acceptance_criteria_falls_back_to_description(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy_dir = root / "policy"
+            generated_dir = root / "generated"
+            outbox_root = root / "outbox"
+            audit_root = root / "audit"
+            validated_bundle = outbox_root / "validated" / "bundle.json"
+
+            _base_policy(policy_dir)
+            _base_generated(generated_dir)
+            payload = _bundle_payload()
+            payload["work_items"][0]["acceptance_criteria"] = [
+                "Given feature scope, when behavior is complete, then value is delivered."
+            ]
+            _write_json(validated_bundle, payload)
+
+            result = write_outbox(
+                bundle=None,
+                write_all_validated=True,
+                dry_run=True,
+                org_url="https://dev.azure.com/example-org",
+                project="ExampleProject",
+                pat=None,
+                policy_dir=policy_dir,
+                generated_dir=generated_dir,
+                outbox_root=outbox_root,
+                audit_root=audit_root,
+            )
+
+            self.assertEqual(result["failed_count"], 0)
+            feature_create_op = result["results"][0]["operations"][0]
+            request_body = feature_create_op["request_body"]
+            by_path = {entry["path"]: entry["value"] for entry in request_body}
+            self.assertIn("/fields/System.Description", by_path)
+            self.assertIn("Acceptance Criteria:", by_path["/fields/System.Description"])
+            self.assertIn("Given feature scope", by_path["/fields/System.Description"])
+            self.assertNotIn("/fields/Microsoft.VSTS.Common.AcceptanceCriteria", by_path)
+
     def test_write_real_stops_on_first_error_and_records_audit(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

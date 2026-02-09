@@ -303,6 +303,31 @@ def _required_missing_fields(
     return missing
 
 
+def _can_write_canonical_field(
+    contract: EffectiveContractConfig,
+    canonical_type: str,
+    canonical_key: str,
+    wit_field_reference_names: Set[str],
+) -> bool:
+    mapping = contract.field_map.canonical_to_ado.get(canonical_key)
+    if mapping is None:
+        return False
+    if mapping.applies_to and canonical_type not in mapping.applies_to:
+        return False
+    return mapping.reference_name in wit_field_reference_names
+
+
+def _merge_acceptance_into_description(
+    description: Optional[str],
+    acceptance_criteria_text: str,
+) -> str:
+    items = [item.strip() for item in acceptance_criteria_text.splitlines() if item.strip()]
+    section = "Acceptance Criteria:\n" + "\n".join(f"- {item}" for item in items)
+    if not description:
+        return section
+    return f"{description}\n\n{section}"
+
+
 def _extract_ado_id(response_payload: Dict[str, Any], operation_url: str) -> int:
     raw_id = response_payload.get("id")
     if isinstance(raw_id, int):
@@ -361,6 +386,30 @@ def _build_create_operation(
         default_area_path=default_area_path,
         default_iteration_path=default_iteration_path,
     )
+
+    acceptance_criteria_text = _as_string(canonical_values.get("acceptance_criteria"))
+    if acceptance_criteria_text and not _can_write_canonical_field(
+        contract=contract,
+        canonical_type=canonical_type,
+        canonical_key="acceptance_criteria",
+        wit_field_reference_names=wit_contract.field_reference_names,
+    ):
+        if not _can_write_canonical_field(
+            contract=contract,
+            canonical_type=canonical_type,
+            canonical_key="description",
+            wit_field_reference_names=wit_contract.field_reference_names,
+        ):
+            raise ValueError(
+                f"Work item '{local_id}' includes acceptance_criteria, but ADO WIT '{ado_wit}' "
+                "does not expose acceptance criteria or description fallback fields."
+            )
+        description_text = _as_string(canonical_values.get("description"))
+        canonical_values["description"] = _merge_acceptance_into_description(
+            description=description_text,
+            acceptance_criteria_text=acceptance_criteria_text,
+        )
+        canonical_values.pop("acceptance_criteria", None)
 
     required_keys = tuple(contract.effective_required_fields_by_type().get(canonical_type, set()))
     missing_fields = _required_missing_fields(required_keys, canonical_values)

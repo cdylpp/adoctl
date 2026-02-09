@@ -132,6 +132,62 @@ class TestPlanningSync(unittest.TestCase):
             self.assertIn("objective_kr_wiql_payload", raw_dump)
             self.assertIn("team_settings_payloads", raw_dump)
 
+    def test_sync_paths_strips_area_and_iteration_container_segments(self) -> None:
+        project_name = "Black Lagoon"
+
+        area_tree = {
+            "path": f"\\{project_name}\\Area",
+            "children": [
+                {
+                    "path": f"\\{project_name}\\Area\\DSA",
+                    "children": [{"path": f"\\{project_name}\\Area\\DSA\\Analytics", "children": []}],
+                }
+            ],
+        }
+        iteration_tree = {
+            "path": f"\\{project_name}\\Iteration",
+            "children": [
+                {
+                    "path": f"\\{project_name}\\Iteration\\DSA",
+                    "children": [{"path": f"\\{project_name}\\Iteration\\DSA\\FY26-Q2-03", "children": []}],
+                }
+            ],
+        }
+
+        def fake_get(_: ADOConfig, url: str, params=None):  # noqa: ANN001
+            normalized = url.lower()
+            if "/classificationnodes/areas" in normalized:
+                return area_tree
+            if "/classificationnodes/iterations" in normalized:
+                return iteration_tree
+            raise AssertionError(f"Unexpected GET URL in test: {url}")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "generated"
+            cfg = ADOConfig(
+                org_url="https://dev.azure.com/example-org",
+                project=project_name,
+                project_id="project-123",
+                pat="test-pat",
+                api_version="6.0",
+            )
+            with patch("adoctl.sync.ado_sync.ado_get", side_effect=fake_get):
+                sync_ado_to_yaml(
+                    cfg=cfg,
+                    out_dir=str(output_dir),
+                    sections=["paths"],
+                )
+
+            area_paths = yaml.safe_load((output_dir / "paths_area.yaml").read_text(encoding="utf-8"))["area_paths"]
+            iteration_paths = yaml.safe_load((output_dir / "paths_iteration.yaml").read_text(encoding="utf-8"))[
+                "iteration_paths"
+            ]
+            self.assertIn(f"{project_name}\\DSA", area_paths)
+            self.assertIn(f"{project_name}\\DSA\\Analytics", area_paths)
+            self.assertIn(f"{project_name}\\DSA\\FY26-Q2-03", iteration_paths)
+            self.assertTrue(all(f"{project_name}\\Area\\" not in path for path in area_paths))
+            self.assertTrue(all(f"{project_name}\\Iteration\\" not in path for path in iteration_paths))
+
 
 if __name__ == "__main__":
     unittest.main()

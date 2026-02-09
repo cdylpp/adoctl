@@ -31,11 +31,25 @@ def _resolve_project_id(cfg: ADOConfig) -> str:
 def _flatten_classification_paths(node: Dict[str, Any]) -> List[str]:
     paths: List[str] = []
 
+    def normalize(path: str) -> Optional[str]:
+        cleaned = path.strip().replace("/", "\\").lstrip("\\")
+        parts = [part.strip() for part in cleaned.split("\\") if part.strip()]
+        if not parts:
+            return None
+        if len(parts) >= 2 and parts[1].lower() in {"area", "areas", "iteration", "iterations"}:
+            parts = [parts[0]] + parts[2:]
+        if not parts:
+            return None
+        return "\\".join(parts)
+
     def walk(n: Dict[str, Any]) -> None:
         path = n.get("path")
         if isinstance(path, str) and path:
-            # ADO returns paths like "\\Project\\Area\\Child"
-            paths.append(path.lstrip("\\"))
+            # ADO may return paths like "\\Project\\Area\\Child" or "\\Project\\Iteration\\Sprint",
+            # but ADO field values are expected as "\\Project\\Child" / "\\Project\\Sprint".
+            normalized = normalize(path)
+            if normalized:
+                paths.append(normalized)
         for child in (n.get("children") or []):
             if isinstance(child, dict):
                 walk(child)
