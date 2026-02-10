@@ -3,85 +3,85 @@
 # User-managed policy files live under config/policy/*.yaml.
 
 iteration_paths:
-- Black Lagoon\Iteration
-- Black Lagoon\Iteration\DSA
-- Black Lagoon\Iteration\DSA\25-00
-- Black Lagoon\Iteration\DSA\25-01
-- Black Lagoon\Iteration\DSA\25-02
-- Black Lagoon\Iteration\DSA\25-03
-- Black Lagoon\Iteration\DSA\25-04
-- Black Lagoon\Iteration\DSA\25-05
-- Black Lagoon\Iteration\DSA\26-00
-- Black Lagoon\Iteration\DSA\26-Q1-01
-- Black Lagoon\Iteration\DSA\26-Q1-02
-- Black Lagoon\Iteration\DSA\26-Q1-03
-- Black Lagoon\Iteration\DSA\26-Q1-04
-- Black Lagoon\Iteration\DSA\26-Q1-05
-- Black Lagoon\Iteration\DSA\26-Q1-06
-- Black Lagoon\Iteration\DSA\FY26-Q2-01
-- Black Lagoon\Iteration\DSA\FY26-Q2-02
-- Black Lagoon\Iteration\DSA\FY26-Q2-03
-- Black Lagoon\Iteration\DSA\FY26-Q2-04
-- Black Lagoon\Iteration\DSA\FY26-Q2-05
-- Black Lagoon\Iteration\DSA\FY26-Q2-06
-- Black Lagoon\Iteration\DSA\FY26-Q3-01
-- Black Lagoon\Iteration\DSA\FY26-Q3-02
-- Black Lagoon\Iteration\DSA\FY26-Q3-03
-- Black Lagoon\Iteration\DSA\FY26-Q3-04
-- Black Lagoon\Iteration\DSA\FY26-Q3-05
-- Black Lagoon\Iteration\DSA\FY26-Q3-06
-- Black Lagoon\Iteration\DSA\FY26-Q4-01
-- Black Lagoon\Iteration\DSA\FY26-Q4-02
-- Black Lagoon\Iteration\DSA\FY26-Q4-03
-- Black Lagoon\Iteration\DSA\FY26-Q4-04
-- Black Lagoon\Iteration\DSA\FY26-Q4-05
-- Black Lagoon\Iteration\DSA\FY26-Q4-06
-- Black Lagoon\Iteration\DT
-- Black Lagoon\Iteration\DT\FY26-Q2-01
-- Black Lagoon\Iteration\DT\FY26-Q2-02
-- Black Lagoon\Iteration\DT\FY26-Q2-03
-- Black Lagoon\Iteration\DT\FY26-Q2-04
-- Black Lagoon\Iteration\DT\FY26-Q2-05
-- Black Lagoon\Iteration\DT\FY26-Q2-06
-- Black Lagoon\Iteration\DT\FY26-Q3-01
-- Black Lagoon\Iteration\DT\FY26-Q3-02
-- Black Lagoon\Iteration\DT\FY26-Q3-03
-- Black Lagoon\Iteration\DT\FY26-Q3-04
-- Black Lagoon\Iteration\DT\FY26-Q3-05
-- Black Lagoon\Iteration\DT\FY26-Q3-06
-- Black Lagoon\Iteration\DT\FY26-Q4-01
-- Black Lagoon\Iteration\DT\FY26-Q4-02
-- Black Lagoon\Iteration\DT\FY26-Q4-03
-- Black Lagoon\Iteration\DT\FY26-Q4-04
-- Black Lagoon\Iteration\DT\FY26-Q4-05
-- Black Lagoon\Iteration\DT\FY26-Q4-06
-- Black Lagoon\Iteration\DT\Sprint 69
-- Black Lagoon\Iteration\DT\Sprint 70
-- Black Lagoon\Iteration\DT\Sprint 71
-- Black Lagoon\Iteration\DT\Sprint 72
-- Black Lagoon\Iteration\DT\Sprint 73
-- Black Lagoon\Iteration\DT\Sprint 74
-- Black Lagoon\Iteration\DT\Sprint 75
-- Black Lagoon\Iteration\KM
-- Black Lagoon\Iteration\KM\FY26-Q2-01
-- Black Lagoon\Iteration\KM\FY26-Q2-02
-- Black Lagoon\Iteration\KM\FY26-Q2-03
-- Black Lagoon\Iteration\KM\FY26-Q2-04
-- Black Lagoon\Iteration\KM\FY26-Q2-05
-- Black Lagoon\Iteration\KM\FY26-Q2-06
-- Black Lagoon\Iteration\KM\FY26-Q3-01
-- Black Lagoon\Iteration\KM\FY26-Q3-02
-- Black Lagoon\Iteration\KM\FY26-Q3-03
-- Black Lagoon\Iteration\KM\FY26-Q3-04
-- Black Lagoon\Iteration\KM\FY26-Q3-05
-- Black Lagoon\Iteration\KM\FY26-Q3-06
-- Black Lagoon\Iteration\KM\FY26-Q4-01
-- Black Lagoon\Iteration\KM\FY26-Q4-02
-- Black Lagoon\Iteration\KM\FY26-Q4-03
-- Black Lagoon\Iteration\KM\FY26-Q4-04
-- Black Lagoon\Iteration\KM\FY26-Q4-05
-- Black Lagoon\Iteration\KM\FY26-Q4-06
-- Black Lagoon\Iteration\KM\KM Sprint 2
-- Black Lagoon\Iteration\KM\KM Sprint 3
-- Black Lagoon\Iteration\KM\Sprint 0
-- Black Lagoon\Iteration\KM\Sprint 1
+- Black Lagoon\
+- Black Lagoon\DSA
+- Black Lagoon\DSA\25-00
+- Black Lagoon\DSA\25-01
+- Black Lagoon\DSA\25-02
+- Black Lagoon\DSA\25-03
+- Black Lagoon\DSA\25-04
+- Black Lagoon\DSA\25-05
+- Black Lagoon\DSA\26-00
+- Black Lagoon\DSA\26-Q1-01
+- Black Lagoon\DSA\26-Q1-02
+- Black Lagoon\DSA\26-Q1-03
+- Black Lagoon\DSA\26-Q1-04
+- Black Lagoon\DSA\26-Q1-05
+- Black Lagoon\DSA\26-Q1-06
+- Black Lagoon\DSA\FY26-Q2-01
+- Black Lagoon\DSA\FY26-Q2-02
+- Black Lagoon\DSA\FY26-Q2-03
+- Black Lagoon\DSA\FY26-Q2-04
+- Black Lagoon\DSA\FY26-Q2-05
+- Black Lagoon\DSA\FY26-Q2-06
+- Black Lagoon\DSA\FY26-Q3-01
+- Black Lagoon\DSA\FY26-Q3-02
+- Black Lagoon\DSA\FY26-Q3-03
+- Black Lagoon\DSA\FY26-Q3-04
+- Black Lagoon\DSA\FY26-Q3-05
+- Black Lagoon\DSA\FY26-Q3-06
+- Black Lagoon\DSA\FY26-Q4-01
+- Black Lagoon\DSA\FY26-Q4-02
+- Black Lagoon\DSA\FY26-Q4-03
+- Black Lagoon\DSA\FY26-Q4-04
+- Black Lagoon\DSA\FY26-Q4-05
+- Black Lagoon\DSA\FY26-Q4-06
+- Black Lagoon\DT
+- Black Lagoon\DT\FY26-Q2-01
+- Black Lagoon\DT\FY26-Q2-02
+- Black Lagoon\DT\FY26-Q2-03
+- Black Lagoon\DT\FY26-Q2-04
+- Black Lagoon\DT\FY26-Q2-05
+- Black Lagoon\DT\FY26-Q2-06
+- Black Lagoon\DT\FY26-Q3-01
+- Black Lagoon\DT\FY26-Q3-02
+- Black Lagoon\DT\FY26-Q3-03
+- Black Lagoon\DT\FY26-Q3-04
+- Black Lagoon\DT\FY26-Q3-05
+- Black Lagoon\DT\FY26-Q3-06
+- Black Lagoon\DT\FY26-Q4-01
+- Black Lagoon\DT\FY26-Q4-02
+- Black Lagoon\DT\FY26-Q4-03
+- Black Lagoon\DT\FY26-Q4-04
+- Black Lagoon\DT\FY26-Q4-05
+- Black Lagoon\DT\FY26-Q4-06
+- Black Lagoon\DT\Sprint 69
+- Black Lagoon\DT\Sprint 70
+- Black Lagoon\DT\Sprint 71
+- Black Lagoon\DT\Sprint 72
+- Black Lagoon\DT\Sprint 73
+- Black Lagoon\DT\Sprint 74
+- Black Lagoon\DT\Sprint 75
+- Black Lagoon\KM
+- Black Lagoon\KM\FY26-Q2-01
+- Black Lagoon\KM\FY26-Q2-02
+- Black Lagoon\KM\FY26-Q2-03
+- Black Lagoon\KM\FY26-Q2-04
+- Black Lagoon\KM\FY26-Q2-05
+- Black Lagoon\KM\FY26-Q2-06
+- Black Lagoon\KM\FY26-Q3-01
+- Black Lagoon\KM\FY26-Q3-02
+- Black Lagoon\KM\FY26-Q3-03
+- Black Lagoon\KM\FY26-Q3-04
+- Black Lagoon\KM\FY26-Q3-05
+- Black Lagoon\KM\FY26-Q3-06
+- Black Lagoon\KM\FY26-Q4-01
+- Black Lagoon\KM\FY26-Q4-02
+- Black Lagoon\KM\FY26-Q4-03
+- Black Lagoon\KM\FY26-Q4-04
+- Black Lagoon\KM\FY26-Q4-05
+- Black Lagoon\KM\FY26-Q4-06
+- Black Lagoon\KM\KM Sprint 2
+- Black Lagoon\KM\KM Sprint 3
+- Black Lagoon\KM\Sprint 0
+- Black Lagoon\KM\Sprint 1

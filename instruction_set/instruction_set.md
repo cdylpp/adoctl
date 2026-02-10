@@ -10,21 +10,17 @@ When earlier sections reference `contracts/agent_contract.yaml`, `contracts/bund
 
 An agent must receive all of the following before generating work-item bundles.
 
-## Mandatory Inputs
+## Expected Inputs
 
 1. Sprint goals and outcomes:
-   - objective text
-   - KR references
-   - scope boundaries
+   - high-level objective text
+   - KR references, these must be in the form of a title or a KR id. You may assume the KR id exists despite explicit knowledge of this fact.
+   - scope boundaries. These may also be inferred by the agent based on high-level objectives and agent understanding of project/task breakdown.
 2. Delivery context:
-   - `project`
-   - `team`
    - `sprint` or iteration reference
-   - `default_area_path`
-   - `default_iteration_path`
-3. Constraints:
+3. Constraints (Optional):
    - dependencies
-   - compliance or governance restrictions
+   - compliance or governance restrictions 
    - explicit exclusions
 4. Contracts:
    - `contracts/bundle.schema.json`
@@ -36,7 +32,7 @@ An agent must receive all of the following before generating work-item bundles.
 1. Parent context must be explicit:
    - if features must map to known KR/parent IDs, provide those IDs directly
 2. Paths must be valid:
-   - provide area/iteration values that exist in ADO metadata
+   - provide area/iteration values that exist in ADO metadata. Use `planning_context.yaml` as source of truth for path names.
    - team-scoped work should use team defaults from `planning_context.yaml`
    - non-team work (Objectives, project-level requests, and applicable Key Results) should use project backlog defaults from `planning_context.yaml`
 3. No ambiguous ownership:
@@ -205,7 +201,7 @@ These are the operational efficiency constraints that keep the system stable.
 # Edit config/policy/*.yaml (and refresh config/generated/wit_contract.yaml) to change this contract.
 
 schema_version: '1.0'
-generated_at_utc: '2026-02-10T18:03:52.641286+00:00'
+generated_at_utc: '2026-02-10T19:22:30.577285+00:00'
 canonical:
   supported_types:
   - Feature
