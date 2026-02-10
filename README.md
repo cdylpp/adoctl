@@ -109,7 +109,7 @@ File-based workflow for bundles.
 - `outbox/validated/` — bundles that pass `adoctl outbox validate`.
 - `outbox/failed/` — bundles that fail validation + `*.report.yaml`.
 - `outbox/archived/` — bundles successfully written and archived after `adoctl write`.
-- `outbox/_written_work_items.yaml` — machine-generated registry of `local_id -> ado_id` for written items.
+- `outbox/_written_work_items.yaml` — machine-generated registry keyed by `ado_id` for written items.
 
 ### `audit/`
 
@@ -211,9 +211,8 @@ Bootstrap policy metadata from team wiki docs (one-time seed):
   - `python -m adoctl write --all-validated --org-url "https://dev.azure.com/<ORG>" --project "<PROJECT>"`
   - creates Features first, then User Stories
   - when `acceptance_criteria` is present but not supported as an ADO field for the target WIT, writer appends it as a section in `System.Description`
-  - skips create for local IDs already present in `outbox/_written_work_items.yaml`
   - links each created item to `relations.parent_local_id` using parent-child hierarchy links only
-  - resolves parent links from in-run creates, registry local IDs, or numeric ADO IDs
+  - resolves parent links from in-run creates or numeric ADO IDs
   - stops on first error and writes audit with failure reason
   - archives successfully written bundles from `outbox/validated/` to `outbox/archived/`
 

@@ -360,6 +360,64 @@ def _parse_objective_and_kr_items(work_items: List[Dict[str, Any]]) -> Dict[str,
     }
 
 
+def _path_is_within_prefix(path_value: Optional[str], prefixes: List[str]) -> bool:
+    normalized_path = _normalize_path_value(path_value or "")
+    if not normalized_path:
+        return False
+    lowered_path = normalized_path.lower()
+    for prefix in _dedupe_preserve(prefixes):
+        lowered_prefix = prefix.lower()
+        if lowered_path == lowered_prefix or lowered_path.startswith(lowered_prefix + "\\"):
+            return True
+    return False
+
+
+def _filter_objective_kr_for_team(
+    parsed_objective_kr: Dict[str, Any],
+    team_semantics: Optional[Dict[str, Any]],
+) -> Dict[str, Any]:
+    if not isinstance(team_semantics, dict):
+        return parsed_objective_kr
+
+    raw_allowed_area_paths = team_semantics.get("allowed_area_paths", [])
+    raw_area_prefixes = team_semantics.get("area_prefixes", [])
+    filter_prefixes: List[str] = []
+    if isinstance(raw_allowed_area_paths, list):
+        filter_prefixes.extend([item for item in raw_allowed_area_paths if isinstance(item, str)])
+    if isinstance(raw_area_prefixes, list):
+        filter_prefixes.extend([item for item in raw_area_prefixes if isinstance(item, str)])
+    default_area = team_semantics.get("default_area_path")
+    if isinstance(default_area, str):
+        filter_prefixes.append(default_area)
+    filter_prefixes = _dedupe_preserve(filter_prefixes)
+    if not filter_prefixes:
+        return {"objectives": [], "key_results": [], "orphan_key_results": []}
+
+    filtered_key_results: List[Dict[str, Any]] = []
+    objective_ids: set = set()
+    for key_result in parsed_objective_kr.get("key_results", []):
+        if not isinstance(key_result, dict):
+            continue
+        if not _path_is_within_prefix(key_result.get("area_path"), filter_prefixes):
+            continue
+        filtered_key_results.append(key_result)
+        parent_objective_id = key_result.get("parent_objective_id")
+        if isinstance(parent_objective_id, int):
+            objective_ids.add(parent_objective_id)
+
+    filtered_objectives = [
+        objective
+        for objective in parsed_objective_kr.get("objectives", [])
+        if isinstance(objective, dict) and isinstance(objective.get("id"), int) and objective.get("id") in objective_ids
+    ]
+    filtered_orphans = [item for item in filtered_key_results if item.get("parent_objective_id") is None]
+    return {
+        "objectives": filtered_objectives,
+        "key_results": filtered_key_results,
+        "orphan_key_results": filtered_orphans,
+    }
+
+
 def _sync_planning_semantics(
     cfg: ADOConfig,
     out_path: Path,
@@ -367,6 +425,7 @@ def _sync_planning_semantics(
     area_paths: List[str],
     iteration_paths: List[str],
     project_id: Optional[str],
+    planning_team: Optional[str],
 ) -> None:
     team_items = teams_payload.get("value", [])
     if not isinstance(team_items, list):
@@ -549,12 +608,24 @@ def _sync_planning_semantics(
             if isinstance(work_item_payload, dict):
                 work_items_details.append(work_item_payload)
 
+    selected_team: Optional[Dict[str, Any]] = None
+    if isinstance(planning_team, str) and planning_team.strip():
+        selected_team_name = planning_team.strip().lower()
+        selected_team = next(
+            (team for team in teams_semantics if isinstance(team.get("name"), str) and team["name"].strip().lower() == selected_team_name),
+            None,
+        )
+        if selected_team is None:
+            raise ValueError(f"Configured planning team '{planning_team}' was not found in synced teams.")
+
     parsed_objective_kr = _parse_objective_and_kr_items(work_items_details)
+    scoped_objective_kr = _filter_objective_kr_for_team(parsed_objective_kr, selected_team)
     planning_context = {
         "schema_version": "1.0",
         "generated_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
         "project": cfg.project,
         "core_team": cfg.project,
+        "configured_team_scope": selected_team.get("name") if isinstance(selected_team, dict) else None,
         "owner_identity_mode": "display_name",
         "project_assignable_identities": sorted(
             project_assignable_identities,
@@ -565,9 +636,9 @@ def _sync_planning_semantics(
             "area_path": cfg.project,
         },
         "teams": sorted(teams_semantics, key=lambda item: str(item["name"]).lower()),
-        "objectives": parsed_objective_kr["objectives"],
-        "key_results": parsed_objective_kr["key_results"],
-        "orphan_key_results": parsed_objective_kr["orphan_key_results"],
+        "objectives": scoped_objective_kr["objectives"],
+        "key_results": scoped_objective_kr["key_results"],
+        "orphan_key_results": scoped_objective_kr["orphan_key_results"],
     }
     _dump_yaml(planning_context, out_path / "planning_context.yaml")
 
@@ -580,6 +651,9 @@ def _sync_planning_semantics(
         "team_defaults_policy": team_defaults_policy,
         "objective_kr_wiql_payload": wiql_payload,
         "objective_kr_work_items_payload": work_items_details,
+        "objective_kr_all": parsed_objective_kr,
+        "objective_kr_scoped": scoped_objective_kr,
+        "configured_team_scope": selected_team.get("name") if isinstance(selected_team, dict) else None,
     }
     _dump_json(raw_dump_payload, out_path / "planning_sync_dump.json")
 
@@ -589,11 +663,13 @@ def sync_ado_to_yaml(
     out_dir: str,
     wit_names: Optional[List[str]] = None,
     sections: Optional[Iterable[str]] = None,
+    planning_team: Optional[str] = None,
 ) -> None:
     """
     Syncs selected ADO metadata into YAML files under out_dir.
 
     sections: iterable of {"projects", "paths", "teams", "wit", "planning"}
+    planning_team: optional team name; when provided, planning Key Results are scoped to that team's area paths.
     """
     out_path = Path(out_dir)
     ensure_dir(out_path)
@@ -716,6 +792,7 @@ def sync_ado_to_yaml(
             area_paths=area_paths,
             iteration_paths=iteration_paths,
             project_id=project_id,
+            planning_team=planning_team,
         )
 
     sync_state = {

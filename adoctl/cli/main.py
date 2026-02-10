@@ -334,6 +334,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         local_project_defaults = load_local_project_defaults()
         org_url = args.org_url or context.org_url
         project = args.project or context.project or local_project_defaults.project
+        planning_team = args.team or context.team
         project_id = None
         if project and local_project_defaults.project and project == local_project_defaults.project:
             project_id = local_project_defaults.project_id
@@ -353,7 +354,13 @@ def main(argv: Optional[List[str]] = None) -> int:
             pat=pat,
             api_version=args.api_version,
         )
-        sync_ado_to_yaml(cfg=cfg, out_dir=args.out_dir, wit_names=args.wit, sections=sections)
+        sync_ado_to_yaml(
+            cfg=cfg,
+            out_dir=args.out_dir,
+            wit_names=args.wit,
+            sections=sections,
+            planning_team=planning_team,
+        )
         save_cli_context(
             _merge_context(
                 context,

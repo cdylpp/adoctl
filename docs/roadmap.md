@@ -85,7 +85,7 @@ Write plan:
 Idempotency strategy (recommended):
 
 - Require a unique `bundle_id` tag to be applied to every created item (policy).
-- Write emits a mapping of `local_id -> ado_id` in audit.
+- Write emits created `ado_id` values in audit and records written items in an ADO-ID keyed registry.
 - A second run can be “detect-only” unless explicitly permitted to update.
 
 ## Key Architectural Decisions for Resilience

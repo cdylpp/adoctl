@@ -279,6 +279,109 @@ class TestPlanningSync(unittest.TestCase):
             self.assertEqual(team["default_iteration_path"], f"{project_name}\\DSA")
             self.assertEqual(team["default_area_path"], f"{project_name}\\Data Science and Analytics")
 
+    def test_sync_planning_scopes_key_results_by_configured_team_area_path(self) -> None:
+        project_name = "Black Lagoon"
+
+        def fake_get(_: ADOConfig, url: str, params=None):  # noqa: ANN001
+            normalized = url.lower()
+            if normalized.endswith("/_apis/projects/project-123/teams"):
+                return {"value": [{"id": "t1", "name": "DataScience"}, {"id": "t2", "name": "AppDev"}]}
+            if normalized.endswith("/_apis/projects/project-123/teams/t1/members"):
+                return {"value": []}
+            if normalized.endswith("/_apis/projects/project-123/teams/t2/members"):
+                return {"value": []}
+            if "/classificationnodes/areas" in normalized:
+                return {
+                    "path": f"\\{project_name}",
+                    "children": [
+                        {"path": f"\\{project_name}\\DataScience", "children": []},
+                        {"path": f"\\{project_name}\\AppDev", "children": []},
+                    ],
+                }
+            if "/classificationnodes/iterations" in normalized:
+                return {
+                    "path": f"\\{project_name}",
+                    "children": [
+                        {"path": f"\\{project_name}\\DataScience", "children": []},
+                        {"path": f"\\{project_name}\\AppDev", "children": []},
+                    ],
+                }
+            if normalized.endswith("/datascience/_apis/work/teamsettings/iterations"):
+                return {"value": [{"path": f"{project_name}\\DataScience"}]}
+            if normalized.endswith("/datascience/_apis/work/teamsettings/teamfieldvalues"):
+                return {"value": [{"value": f"{project_name}\\DataScience"}]}
+            if normalized.endswith("/appdev/_apis/work/teamsettings/iterations"):
+                return {"value": [{"path": f"{project_name}\\AppDev"}]}
+            if normalized.endswith("/appdev/_apis/work/teamsettings/teamfieldvalues"):
+                return {"value": [{"value": f"{project_name}\\AppDev"}]}
+            if normalized.endswith("/_apis/wit/workitems/100"):
+                return {
+                    "id": 100,
+                    "fields": {
+                        "System.WorkItemType": "Objective",
+                        "System.Title": "Improve mission outcomes",
+                        "System.State": "New",
+                        "System.AreaPath": project_name,
+                        "System.IterationPath": project_name,
+                    },
+                }
+            if normalized.endswith("/_apis/wit/workitems/101"):
+                return {
+                    "id": 101,
+                    "fields": {
+                        "System.WorkItemType": "Key Result",
+                        "System.Title": "DataScience KR",
+                        "System.State": "New",
+                        "System.AreaPath": f"{project_name}\\DataScience",
+                        "System.IterationPath": f"{project_name}\\DataScience",
+                        "System.Parent": 100,
+                    },
+                }
+            if normalized.endswith("/_apis/wit/workitems/102"):
+                return {
+                    "id": 102,
+                    "fields": {
+                        "System.WorkItemType": "Key Result",
+                        "System.Title": "AppDev KR",
+                        "System.State": "New",
+                        "System.AreaPath": f"{project_name}\\AppDev",
+                        "System.IterationPath": f"{project_name}\\AppDev",
+                        "System.Parent": 100,
+                    },
+                }
+            raise AssertionError(f"Unexpected GET URL in test: {url}")
+
+        def fake_post(_: ADOConfig, url: str, payload, params=None):  # noqa: ANN001
+            if not url.lower().endswith("/_apis/wit/wiql"):
+                raise AssertionError(f"Unexpected POST URL in test: {url}")
+            return {"workItems": [{"id": 100}, {"id": 101}, {"id": 102}]}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "generated"
+            cfg = ADOConfig(
+                org_url="https://dev.azure.com/example-org",
+                project=project_name,
+                project_id="project-123",
+                pat="test-pat",
+                api_version="6.0",
+            )
+            with patch("adoctl.sync.ado_sync.ado_get", side_effect=fake_get), patch(
+                "adoctl.sync.ado_sync.ado_post_json", side_effect=fake_post
+            ):
+                sync_ado_to_yaml(
+                    cfg=cfg,
+                    out_dir=str(output_dir),
+                    sections=["paths", "teams", "planning"],
+                    planning_team="DataScience",
+                )
+
+            planning = yaml.safe_load((output_dir / "planning_context.yaml").read_text(encoding="utf-8"))
+            self.assertEqual(planning["configured_team_scope"], "DataScience")
+            self.assertEqual(len(planning["key_results"]), 1)
+            self.assertEqual(planning["key_results"][0]["id"], 101)
+            self.assertEqual(planning["key_results"][0]["area_path"], f"{project_name}\\DataScience")
+            self.assertEqual(len(planning["objectives"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

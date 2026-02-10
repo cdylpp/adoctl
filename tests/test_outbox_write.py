@@ -238,9 +238,9 @@ class TestOutboxWrite(unittest.TestCase):
             archived_files = list((outbox_root / "archived").glob("*.json"))
             self.assertEqual(len(archived_files), 1)
             registry_payload = yaml.safe_load((outbox_root / "_written_work_items.yaml").read_text(encoding="utf-8"))
-            registry_index = registry_payload["local_id_index"]
-            self.assertEqual(registry_index["F-001"]["ado_id"], 7001)
-            self.assertEqual(registry_index["US-001"]["ado_id"], 7002)
+            registry_index = registry_payload["ado_id_index"]
+            self.assertEqual(registry_index[7001]["source_local_id"], "F-001")
+            self.assertEqual(registry_index[7002]["source_local_id"], "US-001")
 
     def test_write_feature_acceptance_criteria_falls_back_to_description(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -642,9 +642,9 @@ class TestOutboxWrite(unittest.TestCase):
             self.assertEqual(audit_payload["summary"]["failed_count"], 1)
             self.assertTrue(audit_payload["summary"]["stopped_on_error"])
             registry_payload = yaml.safe_load((outbox_root / "_written_work_items.yaml").read_text(encoding="utf-8"))
-            self.assertEqual(registry_payload["local_id_index"]["F-001"]["ado_id"], 8001)
+            self.assertEqual(registry_payload["ado_id_index"][8001]["source_local_id"], "F-001")
 
-    def test_write_uses_registered_parent_local_id_for_linking(self) -> None:
+    def test_write_uses_numeric_parent_reference_for_linking(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             policy_dir = root / "policy"
@@ -658,24 +658,8 @@ class TestOutboxWrite(unittest.TestCase):
             payload = _bundle_payload()
             payload["work_items"] = [payload["work_items"][1]]
             payload["work_items"][0]["local_id"] = "US-NEW"
-            payload["work_items"][0]["relations"]["parent_local_id"] = "F-EXISTING"
+            payload["work_items"][0]["relations"]["parent_local_id"] = "9012"
             _write_json(validated_bundle, payload)
-            _write_yaml(
-                outbox_root / "_written_work_items.yaml",
-                {
-                    "schema_version": "1.0",
-                    "updated_at_utc": "2026-02-09T00:00:00Z",
-                    "local_id_index": {
-                        "F-EXISTING": {
-                            "ado_id": 9012,
-                            "canonical_type": "Feature",
-                            "title": "Existing feature",
-                            "source_bundle_id": "older-bundle",
-                            "written_at_utc": "2026-02-09T00:00:00Z",
-                        }
-                    },
-                },
-            )
 
             captured_link_payloads: List[List[Dict[str, Any]]] = []
 

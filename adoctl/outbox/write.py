@@ -111,9 +111,9 @@ def _write_audit(audit_payload: Dict[str, Any], audit_path: Path) -> None:
 def _load_work_item_registry(path: Path) -> Dict[str, Any]:
     if not path.exists():
         return {
-            "schema_version": "1.0",
+            "schema_version": "2.0",
             "updated_at_utc": _now_utc(),
-            "local_id_index": {},
+            "ado_id_index": {},
         }
 
     with path.open("r", encoding="utf-8") as f:
@@ -121,48 +121,70 @@ def _load_work_item_registry(path: Path) -> Dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError(f"Invalid registry payload in {path}.")
 
-    raw_index = payload.get("local_id_index", {})
-    if not isinstance(raw_index, dict):
-        raise ValueError(f"Invalid local_id_index in registry {path}.")
+    normalized_index: Dict[int, Dict[str, Any]] = {}
 
-    normalized_index: Dict[str, Dict[str, Any]] = {}
-    for local_id, entry in raw_index.items():
-        if not isinstance(local_id, str) or not local_id.strip() or not isinstance(entry, dict):
-            continue
-        raw_ado_id = entry.get("ado_id")
-        ado_id: Optional[int] = None
-        if isinstance(raw_ado_id, int):
-            ado_id = raw_ado_id
-        elif isinstance(raw_ado_id, str) and raw_ado_id.isdigit():
-            ado_id = int(raw_ado_id)
-        if ado_id is None:
-            continue
-        normalized_index[local_id.strip()] = {
-            "ado_id": ado_id,
-            "canonical_type": _as_string(entry.get("canonical_type")),
-            "title": _as_string(entry.get("title")),
-            "source_bundle_id": _as_string(entry.get("source_bundle_id")),
-            "written_at_utc": _as_string(entry.get("written_at_utc")) or _now_utc(),
-        }
+    raw_ado_index = payload.get("ado_id_index", {})
+    if isinstance(raw_ado_index, dict):
+        for raw_ado_id, entry in raw_ado_index.items():
+            if not isinstance(entry, dict):
+                continue
+            ado_id: Optional[int] = None
+            if isinstance(raw_ado_id, int):
+                ado_id = raw_ado_id
+            elif isinstance(raw_ado_id, str) and raw_ado_id.isdigit():
+                ado_id = int(raw_ado_id)
+            if ado_id is None:
+                continue
+            normalized_index[ado_id] = {
+                "ado_id": ado_id,
+                "canonical_type": _as_string(entry.get("canonical_type")),
+                "title": _as_string(entry.get("title")),
+                "source_bundle_id": _as_string(entry.get("source_bundle_id")),
+                "source_local_id": _as_string(entry.get("source_local_id")),
+                "written_at_utc": _as_string(entry.get("written_at_utc")) or _now_utc(),
+            }
+
+    # Backward compatibility: migrate legacy local_id_index into ado_id_index.
+    raw_legacy_index = payload.get("local_id_index", {})
+    if isinstance(raw_legacy_index, dict):
+        for local_id, entry in raw_legacy_index.items():
+            if not isinstance(local_id, str) or not local_id.strip() or not isinstance(entry, dict):
+                continue
+            raw_ado_id = entry.get("ado_id")
+            ado_id: Optional[int] = None
+            if isinstance(raw_ado_id, int):
+                ado_id = raw_ado_id
+            elif isinstance(raw_ado_id, str) and raw_ado_id.isdigit():
+                ado_id = int(raw_ado_id)
+            if ado_id is None or ado_id in normalized_index:
+                continue
+            normalized_index[ado_id] = {
+                "ado_id": ado_id,
+                "canonical_type": _as_string(entry.get("canonical_type")),
+                "title": _as_string(entry.get("title")),
+                "source_bundle_id": _as_string(entry.get("source_bundle_id")),
+                "source_local_id": local_id.strip(),
+                "written_at_utc": _as_string(entry.get("written_at_utc")) or _now_utc(),
+            }
 
     return {
-        "schema_version": "1.0",
+        "schema_version": "2.0",
         "updated_at_utc": _as_string(payload.get("updated_at_utc")) or _now_utc(),
-        "local_id_index": normalized_index,
+        "ado_id_index": normalized_index,
     }
 
 
 def _save_work_item_registry(registry_payload: Dict[str, Any], path: Path) -> None:
-    local_id_index = registry_payload.get("local_id_index")
-    if not isinstance(local_id_index, dict):
-        raise ValueError("Registry payload missing local_id_index mapping.")
+    ado_id_index = registry_payload.get("ado_id_index")
+    if not isinstance(ado_id_index, dict):
+        raise ValueError("Registry payload missing ado_id_index mapping.")
     payload = {
-        "schema_version": "1.0",
+        "schema_version": "2.0",
         "updated_at_utc": _now_utc(),
-        "local_id_index": {
-            key: local_id_index[key]
-            for key in sorted(local_id_index.keys())
-            if isinstance(key, str) and key.strip()
+        "ado_id_index": {
+            key: ado_id_index[key]
+            for key in sorted(ado_id_index.keys())
+            if isinstance(key, int)
         },
     }
     atomic_write_text(
@@ -172,50 +194,30 @@ def _save_work_item_registry(registry_payload: Dict[str, Any], path: Path) -> No
             [
                 "MACHINE-GENERATED FILE. DO NOT EDIT BY HAND.",
                 "Generated by `adoctl write`.",
-                "Stores persistent local_id -> ado_id mappings for written work items.",
+                "Stores persistent ADO work item records keyed by ado_id.",
             ],
         ),
     )
 
 
-def _lookup_registered_ado_id(registry_payload: Dict[str, Any], local_id: str) -> Optional[int]:
-    local_id_index = registry_payload.get("local_id_index")
-    if not isinstance(local_id_index, dict):
-        return None
-    entry = local_id_index.get(local_id)
-    if not isinstance(entry, dict):
-        return None
-    raw_ado_id = entry.get("ado_id")
-    if isinstance(raw_ado_id, int):
-        return raw_ado_id
-    if isinstance(raw_ado_id, str) and raw_ado_id.isdigit():
-        return int(raw_ado_id)
-    return None
-
-
 def _register_written_item(
     registry_payload: Dict[str, Any],
-    local_id: str,
+    source_local_id: str,
     ado_id: int,
     canonical_type: Optional[str],
     title: Optional[str],
     source_bundle_id: Optional[str],
 ) -> None:
-    local_id_index = registry_payload.setdefault("local_id_index", {})
-    if not isinstance(local_id_index, dict):
-        raise ValueError("Invalid registry local_id_index structure.")
+    ado_id_index = registry_payload.setdefault("ado_id_index", {})
+    if not isinstance(ado_id_index, dict):
+        raise ValueError("Invalid registry ado_id_index structure.")
 
-    existing_ado_id = _lookup_registered_ado_id(registry_payload, local_id)
-    if existing_ado_id is not None and existing_ado_id != ado_id:
-        raise ValueError(
-            f"Registry conflict for local_id '{local_id}': existing ado_id={existing_ado_id}, new ado_id={ado_id}."
-        )
-
-    local_id_index[local_id] = {
+    ado_id_index[ado_id] = {
         "ado_id": ado_id,
         "canonical_type": canonical_type,
         "title": title,
         "source_bundle_id": source_bundle_id,
+        "source_local_id": source_local_id,
         "written_at_utc": _now_utc(),
     }
 
@@ -530,19 +532,15 @@ def _extract_ado_id(response_payload: Dict[str, Any], operation_url: str) -> int
 def _resolve_parent_ado_id(
     parent_reference: str,
     local_to_ado: Dict[str, int],
-    registry_payload: Dict[str, Any],
 ) -> int:
     local_match = local_to_ado.get(parent_reference)
     if local_match is not None:
         return local_match
-    registered_id = _lookup_registered_ado_id(registry_payload, parent_reference)
-    if registered_id is not None:
-        return registered_id
     if parent_reference.isdigit():
         return int(parent_reference)
     raise ValueError(
         f"Unable to resolve parent reference '{parent_reference}'. "
-        "Use a local_id in the same bundle, an existing registry local_id, or a numeric ADO work item id."
+        "Use a local_id in the same bundle or a numeric ADO work item id."
     )
 
 
@@ -798,23 +796,6 @@ def _process_bundle(
     for work_item in work_items:
         local_id = _as_string(work_item.get("local_id")) or "<unknown>"
         canonical_type = _as_string(work_item.get("type"))
-        existing_ado_id = _lookup_registered_ado_id(registry_payload, local_id)
-        if existing_ado_id is not None:
-            local_to_ado[local_id] = existing_ado_id
-            operations.append(
-                {
-                    "phase": "create",
-                    "local_id": local_id,
-                    "canonical_type": canonical_type,
-                    "method": "SKIP",
-                    "url": f"<already-written ado_id={existing_ado_id}>",
-                    "request_body": [],
-                    "executed_at_utc": _now_utc(),
-                    "status": "existing",
-                    "response": {"id": existing_ado_id},
-                }
-            )
-            continue
 
         try:
             create_operation = _build_create_operation(
@@ -878,7 +859,7 @@ def _process_bundle(
                 local_to_ado[create_operation["local_id"]] = created_ado_id
                 _register_written_item(
                     registry_payload=registry_payload,
-                    local_id=create_operation["local_id"],
+                    source_local_id=create_operation["local_id"],
                     ado_id=created_ado_id,
                     canonical_type=create_operation["canonical_type"],
                     title=_as_string(work_item.get("title")),
@@ -910,7 +891,6 @@ def _process_bundle(
             parent_ado_id = _resolve_parent_ado_id(
                 parent_reference=parent_reference,
                 local_to_ado=local_to_ado,
-                registry_payload=registry_payload,
             )
             link_operation = _build_link_operation(
                 cfg=cfg,
