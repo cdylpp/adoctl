@@ -3,3 +3,5 @@
 schema_version: "1.0"
 project: Black Lagoon
 project_id: a91ee819-8d82-4e7a-a81c-3f7ed357ab17
+ssl_verify: true
+ca_bundle_path: null

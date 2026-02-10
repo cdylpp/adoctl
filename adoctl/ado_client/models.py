@@ -11,3 +11,5 @@ class ADOConfig:
     project: Optional[str] = None
     project_id: Optional[str] = None
     api_version: str = "6.0"
+    ssl_verify: bool = True
+    ca_bundle_path: Optional[str] = None

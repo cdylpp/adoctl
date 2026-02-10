@@ -975,6 +975,8 @@ def write_outbox(
     project: str,
     pat: Optional[str],
     api_version: str = "6.0",
+    ssl_verify: bool = True,
+    ca_bundle_path: Optional[str] = None,
     area_override: Optional[str] = None,
     iteration_override: Optional[str] = None,
     owner_display_name: Optional[str] = None,
@@ -1020,6 +1022,8 @@ def write_outbox(
         project=project.strip(),
         pat=pat or "",
         api_version=api_version,
+        ssl_verify=ssl_verify,
+        ca_bundle_path=ca_bundle_path,
     )
 
     create_call = create_request or ado_post_json_patch

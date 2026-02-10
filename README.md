@@ -55,6 +55,7 @@ Layered configuration (do not mix responsibilities between layers).
 - `config/local/` — local operator context for CLI UX.
   - `context.yaml` — selected org/project/team/current iteration used by the home screen and defaults.
   - `project_defaults.yaml` — default project + project_id used when context/CLI args omit them.
+    - TLS options: `ssl_verify` (default `true`) and optional `ca_bundle_path` (PEM path).
 
 ## Configuration Lineage and Ownership
 

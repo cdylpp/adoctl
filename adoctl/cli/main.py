@@ -353,6 +353,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             project_id=project_id,
             pat=pat,
             api_version=args.api_version,
+            ssl_verify=local_project_defaults.ssl_verify,
+            ca_bundle_path=local_project_defaults.ca_bundle_path,
         )
         sync_ado_to_yaml(
             cfg=cfg,
@@ -512,6 +514,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                 project=project,
                 pat=pat,
                 api_version=args.api_version,
+                ssl_verify=local_project_defaults.ssl_verify,
+                ca_bundle_path=local_project_defaults.ca_bundle_path,
                 area_override=args.area,
                 iteration_override=args.iteration,
                 owner_display_name=selected_owner_display_name,

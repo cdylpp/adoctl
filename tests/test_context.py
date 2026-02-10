@@ -45,6 +45,8 @@ class TestCLIContext(unittest.TestCase):
                         "schema_version": "1.0",
                         "project": "Black Lagoon",
                         "project_id": "a91ee819-8d82-4e7a-a81c-3f7ed357ab17",
+                        "ssl_verify": False,
+                        "ca_bundle_path": "/tmp/org-ca.pem",
                     },
                     f,
                     sort_keys=False,
@@ -55,6 +57,8 @@ class TestCLIContext(unittest.TestCase):
             self.assertEqual(context.project, "Black Lagoon")
             self.assertEqual(defaults.project, "Black Lagoon")
             self.assertEqual(defaults.project_id, "a91ee819-8d82-4e7a-a81c-3f7ed357ab17")
+            self.assertFalse(defaults.ssl_verify)
+            self.assertEqual(defaults.ca_bundle_path, "/tmp/org-ca.pem")
 
 
 if __name__ == "__main__":

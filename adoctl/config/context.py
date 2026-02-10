@@ -24,6 +24,8 @@ class CLIContext:
 class LocalProjectDefaults:
     project: Optional[str] = None
     project_id: Optional[str] = None
+    ssl_verify: bool = True
+    ca_bundle_path: Optional[str] = None
 
 
 def _normalize_optional_string(value: Any) -> Optional[str]:
@@ -33,6 +35,18 @@ def _normalize_optional_string(value: Any) -> Optional[str]:
     if not normalized:
         return None
     return normalized
+
+
+def _normalize_optional_bool(value: Any, default: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "y", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "n", "off"}:
+            return False
+    return default
 
 
 def load_local_project_defaults(path: Optional[Path] = None) -> LocalProjectDefaults:
@@ -49,6 +63,8 @@ def load_local_project_defaults(path: Optional[Path] = None) -> LocalProjectDefa
     return LocalProjectDefaults(
         project=_normalize_optional_string(data.get("project")),
         project_id=_normalize_optional_string(data.get("project_id")),
+        ssl_verify=_normalize_optional_bool(data.get("ssl_verify"), default=True),
+        ca_bundle_path=_normalize_optional_string(data.get("ca_bundle_path")),
     )
 
 

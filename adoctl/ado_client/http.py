@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, Optional, Sequence
 
 import requests
+import urllib3
 
 from adoctl.ado_client.auth import basic_auth_header_from_pat
 from adoctl.ado_client.models import ADOConfig
@@ -19,6 +20,15 @@ def _is_expand_fields_conflict(status_code: int, body: str, params: Dict[str, st
     return "expand parameter" in normalized and "fields parameter" in normalized
 
 
+def _request_verify_value(cfg: ADOConfig) -> Any:
+    if cfg.ssl_verify is False:
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        return False
+    if isinstance(cfg.ca_bundle_path, str) and cfg.ca_bundle_path.strip():
+        return cfg.ca_bundle_path.strip()
+    return True
+
+
 def ado_get(cfg: ADOConfig, url: str, params: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     headers: Dict[str, str] = {"Accept": "application/json"}
     headers.update(basic_auth_header_from_pat(cfg.pat))
@@ -26,11 +36,12 @@ def ado_get(cfg: ADOConfig, url: str, params: Optional[Dict[str, str]] = None) -
     request_params = dict(params or {})
     request_params.setdefault("api-version", cfg.api_version)
 
-    resp = requests.get(url, headers=headers, params=request_params, timeout=30)
+    verify_value = _request_verify_value(cfg)
+    resp = requests.get(url, headers=headers, params=request_params, timeout=30, verify=verify_value)
     if _is_expand_fields_conflict(resp.status_code, resp.text or "", request_params):
         retry_params = dict(request_params)
         retry_params.pop("$expand", None)
-        resp = requests.get(url, headers=headers, params=retry_params, timeout=30)
+        resp = requests.get(url, headers=headers, params=retry_params, timeout=30, verify=verify_value)
     if resp.status_code >= 400:
         body = (resp.text or "")[:500]
         raise RuntimeError(f"ADO GET failed ({resp.status_code}) for {url}: {body}")
@@ -52,7 +63,15 @@ def ado_post_json_patch(
     request_params = dict(params or {})
     request_params.setdefault("api-version", cfg.api_version)
 
-    resp = requests.post(url, headers=headers, params=request_params, json=list(patch_document), timeout=30)
+    verify_value = _request_verify_value(cfg)
+    resp = requests.post(
+        url,
+        headers=headers,
+        params=request_params,
+        json=list(patch_document),
+        timeout=30,
+        verify=verify_value,
+    )
     if resp.status_code >= 400:
         body = (resp.text or "")[:500]
         raise RuntimeError(f"ADO POST failed ({resp.status_code}) for {url}: {body}")
@@ -74,7 +93,15 @@ def ado_post_json(
     request_params = dict(params or {})
     request_params.setdefault("api-version", cfg.api_version)
 
-    resp = requests.post(url, headers=headers, params=request_params, json=dict(payload), timeout=30)
+    verify_value = _request_verify_value(cfg)
+    resp = requests.post(
+        url,
+        headers=headers,
+        params=request_params,
+        json=dict(payload),
+        timeout=30,
+        verify=verify_value,
+    )
     if resp.status_code >= 400:
         body = (resp.text or "")[:500]
         raise RuntimeError(f"ADO POST failed ({resp.status_code}) for {url}: {body}")
@@ -96,7 +123,15 @@ def ado_patch_json_patch(
     request_params = dict(params or {})
     request_params.setdefault("api-version", cfg.api_version)
 
-    resp = requests.patch(url, headers=headers, params=request_params, json=list(patch_document), timeout=30)
+    verify_value = _request_verify_value(cfg)
+    resp = requests.patch(
+        url,
+        headers=headers,
+        params=request_params,
+        json=list(patch_document),
+        timeout=30,
+        verify=verify_value,
+    )
     if resp.status_code >= 400:
         body = (resp.text or "")[:500]
         raise RuntimeError(f"ADO PATCH failed ({resp.status_code}) for {url}: {body}")
