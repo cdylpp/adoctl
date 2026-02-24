@@ -4,7 +4,9 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
+
+from tqdm import tqdm
 
 from adoctl.ado_client.models import ADOConfig
 from adoctl.cli.home import load_generated_owner_display_names, run_home_screen_loop
@@ -17,6 +19,57 @@ from adoctl.outbox.validate import validate_outbox
 from adoctl.outbox.write import write_outbox
 from adoctl.sync.ado_sync import sync_ado_to_yaml
 from adoctl.sync.wit_bootstrap import bootstrap_wit_contracts_from_extract
+
+
+class _CommandProgress:
+    def __init__(self, label: str) -> None:
+        self._enabled = sys.stderr.isatty()
+        self._bar = tqdm(
+            total=0,
+            unit="step",
+            dynamic_ncols=True,
+            leave=True,
+            disable=not self._enabled,
+            desc=label,
+        )
+
+    def callback(self, event: str, payload: Dict[str, Any]) -> None:
+        if not self._enabled:
+            return
+
+        if event == "set_total":
+            total = payload.get("total")
+            if isinstance(total, int) and total >= 0:
+                self._bar.total = total
+                self._bar.refresh()
+            return
+
+        if event == "add_total":
+            delta = payload.get("delta")
+            if isinstance(delta, int) and delta > 0:
+                self._bar.total = max(self._bar.total or 0, self._bar.n) + delta
+                self._bar.refresh()
+            return
+
+        if event == "step":
+            message = payload.get("message")
+            if isinstance(message, str) and message.strip():
+                self._bar.set_description_str(message.strip())
+            self._bar.update(1)
+            return
+
+        if event == "complete":
+            message = payload.get("message")
+            if isinstance(message, str) and message.strip():
+                self._bar.set_description_str(message.strip())
+            self._bar.total = self._bar.n
+            self._bar.refresh()
+
+    def close(self) -> None:
+        if self._enabled:
+            self._bar.total = self._bar.n
+            self._bar.refresh()
+        self._bar.close()
 
 
 def _add_global_args(parser: argparse.ArgumentParser) -> None:
@@ -356,13 +409,18 @@ def main(argv: Optional[List[str]] = None) -> int:
             ssl_verify=local_project_defaults.ssl_verify,
             ca_bundle_path=local_project_defaults.ca_bundle_path,
         )
-        sync_ado_to_yaml(
-            cfg=cfg,
-            out_dir=args.out_dir,
-            wit_names=args.wit,
-            sections=sections,
-            planning_team=planning_team,
-        )
+        progress = _CommandProgress("sync")
+        try:
+            sync_ado_to_yaml(
+                cfg=cfg,
+                out_dir=args.out_dir,
+                wit_names=args.wit,
+                sections=sections,
+                planning_team=planning_team,
+                progress_callback=progress.callback,
+            )
+        finally:
+            progress.close()
         save_cli_context(
             _merge_context(
                 context,
@@ -446,6 +504,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
 
     if args.command == "outbox" and args.outbox_cmd == "validate":
+        progress = _CommandProgress("validate")
         try:
             result = validate_outbox(
                 bundle=args.bundle,
@@ -453,10 +512,13 @@ def main(argv: Optional[List[str]] = None) -> int:
                 policy_dir=Path(args.policy_dir),
                 generated_dir=Path(args.generated_dir),
                 schema_path=Path(args.schema),
+                progress_callback=progress.callback,
             )
         except Exception as exc:  # noqa: BLE001 - CLI surface should return actionable errors
+            progress.close()
             print(f"outbox validate: {exc}", file=sys.stderr)
             return 2
+        progress.close()
 
         print(
             "Validated bundles: "
@@ -505,6 +567,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             if selected_owner_display_name:
                 print(f"Using owner display name: {selected_owner_display_name}")
 
+        progress = _CommandProgress("write")
         try:
             result = write_outbox(
                 bundle=args.bundle,
@@ -522,10 +585,13 @@ def main(argv: Optional[List[str]] = None) -> int:
                 policy_dir=Path(args.policy_dir),
                 generated_dir=Path(args.generated_dir),
                 outbox_root=Path(args.outbox_root),
+                progress_callback=progress.callback,
             )
         except Exception as exc:  # noqa: BLE001 - CLI surface should return actionable errors
+            progress.close()
             print(f"write: {exc}", file=sys.stderr)
             return 2
+        progress.close()
 
         save_cli_context(
             _merge_context(

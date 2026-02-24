@@ -7,9 +7,8 @@ name = "adoctl"
 version = "0.1.0"
 description = "Azure DevOps decomposition outbox + writer CLI"
 readme = "README.md"
-requires-python = ">=3.11"
 requires-python = ">=3.8"
-dependencies = ["requests", "PyYAML", "jsonschema>=4,<5"]
+dependencies = ["requests", "PyYAML", "jsonschema>=4,<5", "tqdm==4.50.2"]
 
 [project.scripts]
 adoctl = "adoctl.cli.main:main"

@@ -215,6 +215,44 @@ class TestPlanningSync(unittest.TestCase):
             self.assertTrue(all(f"{project_name}\\Area\\" not in path for path in area_paths))
             self.assertTrue(all(f"{project_name}\\Iteration\\" not in path for path in iteration_paths))
 
+    def test_sync_progress_callback_emits_step_events(self) -> None:
+        project_name = "Black Lagoon"
+
+        def fake_get(_: ADOConfig, url: str, params=None):  # noqa: ANN001
+            normalized = url.lower()
+            if "/classificationnodes/areas" in normalized:
+                return _path_tree(project_name)
+            if "/classificationnodes/iterations" in normalized:
+                return _path_tree(project_name)
+            raise AssertionError(f"Unexpected GET URL in test: {url}")
+
+        events = []
+
+        def progress_callback(event: str, payload: dict) -> None:
+            events.append((event, payload))
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "generated"
+            cfg = ADOConfig(
+                org_url="https://dev.azure.com/example-org",
+                project=project_name,
+                project_id="project-123",
+                pat="test-pat",
+                api_version="6.0",
+            )
+            with patch("adoctl.sync.ado_sync.ado_get", side_effect=fake_get):
+                sync_ado_to_yaml(
+                    cfg=cfg,
+                    out_dir=str(output_dir),
+                    sections=["paths"],
+                    progress_callback=progress_callback,
+                )
+
+            self.assertTrue(any(event == "set_total" for event, _ in events))
+            step_messages = [payload.get("message", "") for event, payload in events if event == "step"]
+            self.assertTrue(any("fetch area and iteration paths" in message for message in step_messages))
+            self.assertTrue(any("write sync state" in message for message in step_messages))
+
     def test_sync_planning_applies_team_default_overrides(self) -> None:
         project_name = "Black Lagoon"
 

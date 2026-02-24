@@ -690,6 +690,44 @@ class TestOutboxWrite(unittest.TestCase):
             link_target_url = captured_link_payloads[0][0]["value"]["url"]
             self.assertIn("/_apis/wit/workitems/9012", link_target_url)
 
+    def test_write_progress_callback_emits_step_events(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy_dir = root / "policy"
+            generated_dir = root / "generated"
+            outbox_root = root / "outbox"
+            audit_root = root / "audit"
+            validated_bundle = outbox_root / "validated" / "bundle.json"
+
+            _base_policy(policy_dir)
+            _base_generated(generated_dir)
+            _write_json(validated_bundle, _bundle_payload())
+
+            events = []
+
+            def progress_callback(event: str, payload: dict) -> None:
+                events.append((event, payload))
+
+            result = write_outbox(
+                bundle=None,
+                write_all_validated=True,
+                dry_run=True,
+                org_url="https://dev.azure.com/example-org",
+                project="ExampleProject",
+                pat=None,
+                policy_dir=policy_dir,
+                generated_dir=generated_dir,
+                outbox_root=outbox_root,
+                audit_root=audit_root,
+                progress_callback=progress_callback,
+            )
+
+            self.assertEqual(result["failed_count"], 0)
+            self.assertTrue(any(event == "set_total" for event, _ in events))
+            step_messages = [payload.get("message", "") for event, payload in events if event == "step"]
+            self.assertTrue(any("create (Feature)" in message for message in step_messages))
+            self.assertTrue(any("link parent" in message for message in step_messages))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -4,7 +4,7 @@ import datetime as dt
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional
 
 import yaml
 
@@ -13,6 +13,14 @@ from adoctl.ado_client.models import ADOConfig
 from adoctl.util.fs import atomic_write_text, ensure_dir
 from adoctl.util.yaml_emit import render_yaml_with_header
 from adoctl.util.url import join_url
+
+ProgressCallback = Callable[[str, Dict[str, Any]], None]
+
+
+def _emit_progress(progress_callback: Optional[ProgressCallback], event: str, **payload: Any) -> None:
+    if progress_callback is None:
+        return
+    progress_callback(event, dict(payload))
 
 
 def _resolve_project_id(cfg: ADOConfig) -> str:
@@ -426,6 +434,7 @@ def _sync_planning_semantics(
     iteration_paths: List[str],
     project_id: Optional[str],
     planning_team: Optional[str],
+    progress_callback: Optional[ProgressCallback] = None,
 ) -> None:
     team_items = teams_payload.get("value", [])
     if not isinstance(team_items, list):
@@ -443,6 +452,11 @@ def _sync_planning_semantics(
         if not isinstance(team_name, str) or not team_name.strip():
             continue
         team_name = team_name.strip()
+        _emit_progress(
+            progress_callback,
+            "step",
+            message=f"sync planning: {team_name} team settings",
+        )
 
         team_iteration_url = join_url(
             cfg.org_url, cfg.project, team_name, "_apis", "work", "teamsettings", "iterations"
@@ -581,6 +595,7 @@ def _sync_planning_semantics(
         for item in wiql_items:
             if isinstance(item, dict) and isinstance(item.get("id"), int):
                 objective_kr_ids.append(item["id"])
+    _emit_progress(progress_callback, "add_total", delta=len(objective_kr_ids))
 
     work_items_details: List[Dict[str, Any]] = []
     if objective_kr_ids:
@@ -597,6 +612,11 @@ def _sync_planning_semantics(
             ]
         )
         for work_item_id in objective_kr_ids:
+            _emit_progress(
+                progress_callback,
+                "step",
+                message=f"sync planning: objective/KR {work_item_id}",
+            )
             work_item_url = join_url(cfg.org_url, cfg.project, "_apis", "wit", "workitems", str(work_item_id))
             work_item_payload = ado_get(
                 cfg,
@@ -656,6 +676,7 @@ def _sync_planning_semantics(
         "configured_team_scope": selected_team.get("name") if isinstance(selected_team, dict) else None,
     }
     _dump_json(raw_dump_payload, out_path / "planning_sync_dump.json")
+    _emit_progress(progress_callback, "step", message="sync planning: write planning outputs")
 
 
 def sync_ado_to_yaml(
@@ -664,6 +685,7 @@ def sync_ado_to_yaml(
     wit_names: Optional[List[str]] = None,
     sections: Optional[Iterable[str]] = None,
     planning_team: Optional[str] = None,
+    progress_callback: Optional[ProgressCallback] = None,
 ) -> None:
     """
     Syncs selected ADO metadata into YAML files under out_dir.
@@ -675,6 +697,20 @@ def sync_ado_to_yaml(
     ensure_dir(out_path)
 
     requested = set(sections or ["projects", "paths", "teams", "wit", "planning"])
+    progress_total = 1
+    if "projects" in requested:
+        progress_total += 1
+    if "paths" in requested:
+        progress_total += 1
+    if "teams" in requested or "planning" in requested:
+        progress_total += 1
+    if "teams" in requested:
+        progress_total += 1
+    if "wit" in requested:
+        progress_total += 1
+    if "planning" in requested:
+        progress_total += 2
+    _emit_progress(progress_callback, "set_total", total=progress_total)
 
     teams_payload: Dict[str, Any] = {}
     normalized_teams: List[Dict[str, Any]] = []
@@ -682,6 +718,7 @@ def sync_ado_to_yaml(
     if "teams" in requested or "planning" in requested:
         if not cfg.project:
             raise ValueError("cfg.project is required to sync teams and planning metadata.")
+        _emit_progress(progress_callback, "step", message="sync: fetch project teams")
         project_id = _resolve_project_id(cfg)
         teams_url = join_url(cfg.org_url, "_apis", "projects", project_id, "teams")
         teams_payload = ado_get(cfg, teams_url)
@@ -698,8 +735,11 @@ def sync_ado_to_yaml(
                 for t in raw_teams
                 if isinstance(t, dict)
             ]
+            if "planning" in requested:
+                _emit_progress(progress_callback, "add_total", delta=len(normalized_teams))
 
     if "projects" in requested:
+        _emit_progress(progress_callback, "step", message="sync: fetch projects")
         projects_url = join_url(cfg.org_url, "_apis", "projects")
         projects = ado_get(cfg, projects_url).get("value", [])
         normalized = [
@@ -721,6 +761,7 @@ def sync_ado_to_yaml(
         if not cfg.project:
             raise ValueError("cfg.project is required to sync area/iteration paths and planning metadata.")
 
+        _emit_progress(progress_callback, "step", message="sync: fetch area and iteration paths")
         areas_url = join_url(cfg.org_url, cfg.project, "_apis", "wit", "classificationnodes", "areas")
         iters_url = join_url(cfg.org_url, cfg.project, "_apis", "wit", "classificationnodes", "iterations")
 
@@ -735,6 +776,7 @@ def sync_ado_to_yaml(
             _dump_yaml({"iteration_paths": iteration_paths}, out_path / "paths_iteration.yaml")
 
     if "teams" in requested:
+        _emit_progress(progress_callback, "step", message="sync: write teams metadata")
         _dump_yaml({"project": cfg.project, "teams": normalized_teams}, out_path / "teams.yaml")
 
     if "wit" in requested:
@@ -744,16 +786,19 @@ def sync_ado_to_yaml(
         if wit_names:
             resolved_wit_names = list(wit_names)
         else:
+            _emit_progress(progress_callback, "step", message="sync: fetch work item types")
             wit_list_url = join_url(cfg.org_url, cfg.project, "_apis", "wit", "workitemtypes")
             wit_list = ado_get(cfg, wit_list_url).get("value", [])
             resolved_wit_names = [
                 w.get("name") for w in wit_list if isinstance(w, dict) and isinstance(w.get("name"), str)
             ]
             resolved_wit_names.sort()
+        _emit_progress(progress_callback, "add_total", delta=len(resolved_wit_names))
 
         wit_contract: Dict[str, Any] = {"schema_version": "1.0", "work_item_types": {}}
 
         for wit in resolved_wit_names:
+            _emit_progress(progress_callback, "step", message=f"sync WIT: {wit}")
             fields_url = join_url(
                 cfg.org_url,
                 cfg.project,
@@ -785,6 +830,7 @@ def sync_ado_to_yaml(
     if "planning" in requested:
         if not cfg.project:
             raise ValueError("cfg.project is required to sync planning metadata.")
+        _emit_progress(progress_callback, "step", message="sync: planning semantics")
         _sync_planning_semantics(
             cfg=cfg,
             out_path=out_path,
@@ -793,8 +839,10 @@ def sync_ado_to_yaml(
             iteration_paths=iteration_paths,
             project_id=project_id,
             planning_team=planning_team,
+            progress_callback=progress_callback,
         )
 
+    _emit_progress(progress_callback, "step", message="sync: write sync state")
     sync_state = {
         "schema_version": "1.0",
         "synced_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
@@ -805,3 +853,4 @@ def sync_ado_to_yaml(
         "wit_filter": list(wit_names or []),
     }
     _dump_yaml(sync_state, out_path / "_sync_state.yaml")
+    _emit_progress(progress_callback, "complete", message="sync: complete")

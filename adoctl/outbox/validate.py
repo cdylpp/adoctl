@@ -4,7 +4,7 @@ import datetime as dt
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple
 
 from jsonschema import ValidationError, validate as jsonschema_validate
 import yaml
@@ -17,6 +17,13 @@ from adoctl.util.yaml_emit import render_yaml_with_header
 
 TOP_LEVEL_CANONICAL_KEYS = {"title", "description", "acceptance_criteria"}
 DEFAULT_SCHEMA_PATH = Path("schema") / "bundle.schema.json"
+ProgressCallback = Callable[[str, Dict[str, Any]], None]
+
+
+def _emit_progress(progress_callback: Optional[ProgressCallback], event: str, **payload: Any) -> None:
+    if progress_callback is None:
+        return
+    progress_callback(event, dict(payload))
 
 
 def _now_utc() -> str:
@@ -627,12 +634,18 @@ def _validate_single_bundle(
     iteration_paths_error: Optional[str],
     planning_context: Optional[Dict[str, Any]],
     planning_context_error: Optional[str],
+    progress_callback: Optional[ProgressCallback] = None,
 ) -> Dict[str, Any]:
     schema_issues: List[Dict[str, str]] = []
     policy_issues: List[Dict[str, str]] = []
     metadata_issues: List[Dict[str, str]] = []
     bundle_payload: Optional[Dict[str, Any]] = None
 
+    _emit_progress(
+        progress_callback,
+        "step",
+        message=f"validate {bundle_path.name}: load bundle",
+    )
     try:
         raw_payload = json.loads(bundle_path.read_text(encoding="utf-8"))
         if not isinstance(raw_payload, dict):
@@ -647,12 +660,48 @@ def _validate_single_bundle(
             message=f"Failed to parse bundle JSON: {exc}",
             suggestion="Provide a valid JSON object file.",
         )
+        _emit_progress(
+            progress_callback,
+            "step",
+            message=f"validate {bundle_path.name}: schema skipped (invalid JSON)",
+        )
+        _emit_progress(
+            progress_callback,
+            "step",
+            message=f"validate {bundle_path.name}: policy skipped",
+        )
+        _emit_progress(
+            progress_callback,
+            "step",
+            message=f"validate {bundle_path.name}: metadata skipped",
+        )
         return _build_report(bundle_path, {}, schema_issues, policy_issues, metadata_issues)
 
+    _emit_progress(
+        progress_callback,
+        "step",
+        message=f"validate {bundle_path.name}: schema validation",
+    )
     schema_issues = _validate_schema_stage(bundle_payload=bundle_payload, schema_payload=schema_payload)
     if not schema_issues:
+        _emit_progress(
+            progress_callback,
+            "step",
+            message=f"validate {bundle_path.name}: policy validation",
+        )
         policy_issues = _policy_stage(bundle_payload=bundle_payload, config=config)
+    else:
+        _emit_progress(
+            progress_callback,
+            "step",
+            message=f"validate {bundle_path.name}: policy skipped",
+        )
     if not schema_issues and not policy_issues:
+        _emit_progress(
+            progress_callback,
+            "step",
+            message=f"validate {bundle_path.name}: metadata validation",
+        )
         metadata_issues = _metadata_stage(
             bundle_payload=bundle_payload,
             config=config,
@@ -662,6 +711,12 @@ def _validate_single_bundle(
             iteration_paths_error=iteration_paths_error,
             planning_context=planning_context,
             planning_context_error=planning_context_error,
+        )
+    else:
+        _emit_progress(
+            progress_callback,
+            "step",
+            message=f"validate {bundle_path.name}: metadata skipped",
         )
     return _build_report(bundle_path, bundle_payload, schema_issues, policy_issues, metadata_issues)
 
@@ -711,6 +766,7 @@ def validate_outbox(
     generated_dir: Optional[Path] = None,
     schema_path: Optional[Path] = None,
     outbox_root: Optional[Path] = None,
+    progress_callback: Optional[ProgressCallback] = None,
 ) -> Dict[str, Any]:
     if validate_all and bundle:
         raise ValueError("Pass either a bundle path or --all, not both.")
@@ -734,10 +790,14 @@ def validate_outbox(
             raise FileNotFoundError(f"Bundle file not found: {bundle}")
         bundle_paths = [bundle_path]
 
+    _emit_progress(progress_callback, "set_total", total=3 + (len(bundle_paths) * 5))
+    _emit_progress(progress_callback, "step", message="validate: load bundle schema")
     schema_payload = _load_json_schema(schema_path or DEFAULT_SCHEMA_PATH)
+    _emit_progress(progress_callback, "step", message="validate: load effective contract")
     contract = load_effective_contract(policy_dir=policy_dir, generated_dir=generated_dir)
 
     generated_root = generated_dir if generated_dir is not None else Path("config") / "generated"
+    _emit_progress(progress_callback, "step", message="validate: load generated metadata")
     area_paths, area_paths_error = _load_path_list(Path(generated_root) / "paths_area.yaml", "area_paths")
     iteration_paths, iteration_paths_error = _load_path_list(
         Path(generated_root) / "paths_iteration.yaml", "iteration_paths"
@@ -759,6 +819,7 @@ def validate_outbox(
             iteration_paths_error=iteration_paths_error,
             planning_context=planning_context,
             planning_context_error=planning_context_error,
+            progress_callback=progress_callback,
         )
         passed = report["summary"]["result"] == "passed"
         managed_by_outbox = _is_under_directory(bundle_path, ready_dir)
@@ -781,6 +842,12 @@ def validate_outbox(
             report_file_name = f"{bundle_path.stem}.report.yaml"
             report_path = _unique_file_path(failed_dir, report_file_name)
             _write_failure_report(report_payload=report, report_path=report_path)
+
+        _emit_progress(
+            progress_callback,
+            "step",
+            message=f"validate {bundle_path.name}: finalize ({report['summary']['result']})",
+        )
 
         results.append(
             {

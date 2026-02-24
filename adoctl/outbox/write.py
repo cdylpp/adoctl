@@ -23,6 +23,13 @@ WORK_ITEM_REGISTRY_FILENAME = "_written_work_items.yaml"
 
 CreateRequest = Callable[[ADOConfig, str, Sequence[Dict[str, Any]]], Dict[str, Any]]
 LinkRequest = Callable[[ADOConfig, str, Sequence[Dict[str, Any]]], Dict[str, Any]]
+ProgressCallback = Callable[[str, Dict[str, Any]], None]
+
+
+def _emit_progress(progress_callback: Optional[ProgressCallback], event: str, **payload: Any) -> None:
+    if progress_callback is None:
+        return
+    progress_callback(event, dict(payload))
 
 
 def _now_utc() -> str:
@@ -774,6 +781,7 @@ def _process_bundle(
     create_request: CreateRequest,
     link_request: LinkRequest,
     owner_override: Optional[str],
+    progress_callback: Optional[ProgressCallback] = None,
 ) -> Dict[str, Any]:
     try:
         work_items = _ordered_work_items(_bundle_work_items(bundle_payload))
@@ -796,6 +804,11 @@ def _process_bundle(
     for work_item in work_items:
         local_id = _as_string(work_item.get("local_id")) or "<unknown>"
         canonical_type = _as_string(work_item.get("type"))
+        _emit_progress(
+            progress_callback,
+            "step",
+            message=f"write {local_id}: create ({canonical_type or 'unknown'})",
+        )
 
         try:
             create_operation = _build_create_operation(
@@ -885,6 +898,11 @@ def _process_bundle(
         if not parent_reference:
             continue
 
+        _emit_progress(
+            progress_callback,
+            "step",
+            message=f"write {create_operation['local_id']}: link parent",
+        )
         child_local_id = create_operation["local_id"]
         child_ado_id = local_to_ado[child_local_id]
         try:
@@ -986,6 +1004,7 @@ def write_outbox(
     audit_root: Optional[Path] = None,
     create_request: Optional[CreateRequest] = None,
     link_request: Optional[LinkRequest] = None,
+    progress_callback: Optional[ProgressCallback] = None,
 ) -> Dict[str, Any]:
     if write_all_validated and bundle:
         raise ValueError("Pass either a bundle path or --all-validated, not both.")
@@ -1014,9 +1033,14 @@ def write_outbox(
             raise FileNotFoundError(f"Bundle file not found: {bundle}")
         bundle_paths = [bundle_path]
 
+    progress_total = 4
+    _emit_progress(progress_callback, "set_total", total=progress_total)
+    _emit_progress(progress_callback, "step", message="write: load effective contract")
     resolved_generated_dir = generated_dir if generated_dir is not None else Path("config") / "generated"
     contract = load_effective_contract(policy_dir=policy_dir, generated_dir=resolved_generated_dir)
+    _emit_progress(progress_callback, "step", message="write: load planning context")
     planning_context = _load_planning_context(resolved_generated_dir)
+    _emit_progress(progress_callback, "step", message="write: configure ADO client")
     cfg = ADOConfig(
         org_url=org_url.strip(),
         project=project.strip(),
@@ -1029,6 +1053,7 @@ def write_outbox(
     create_call = create_request or ado_post_json_patch
     link_call = link_request or ado_patch_json_patch
 
+    _emit_progress(progress_callback, "step", message="write: begin processing validated bundles")
     run_started = _now_utc()
     results: List[Dict[str, Any]] = []
     succeeded_count = 0
@@ -1036,9 +1061,22 @@ def write_outbox(
     stopped_on_error = False
 
     for bundle_path in bundle_paths:
+        progress_total += 2
+        _emit_progress(progress_callback, "set_total", total=progress_total)
+        _emit_progress(progress_callback, "step", message=f"write {bundle_path.name}: load bundle")
         managed_by_outbox = _is_under_directory(bundle_path, validated_dir)
         try:
             bundle_payload = _load_bundle_payload(bundle_path)
+            try:
+                planned_work_items = _ordered_work_items(_bundle_work_items(bundle_payload))
+                expected_operations = len(planned_work_items) + sum(
+                    1 for item in planned_work_items if _resolve_parent_reference(item)
+                )
+            except Exception:
+                expected_operations = 0
+            if expected_operations > 0:
+                progress_total += expected_operations
+                _emit_progress(progress_callback, "set_total", total=progress_total)
             context = bundle_payload.get("context")
             context_mapping = context if isinstance(context, dict) else {}
 
@@ -1058,6 +1096,7 @@ def write_outbox(
                 create_request=create_call,
                 link_request=link_call,
                 owner_override=_as_string(owner_display_name),
+                progress_callback=progress_callback,
             )
         except Exception as exc:  # noqa: BLE001 - audit should still emit for unexpected failures
             result = {
@@ -1075,9 +1114,19 @@ def write_outbox(
                 destination = _unique_file_path(archived_dir, bundle_path.name)
                 bundle_path.replace(destination)
                 moved_bundle_path = destination
+            _emit_progress(
+                progress_callback,
+                "step",
+                message=f"write {bundle_path.name}: finalized",
+            )
         else:
             failed_count += 1
             stopped_on_error = True
+            _emit_progress(
+                progress_callback,
+                "step",
+                message=f"write {bundle_path.name}: failed",
+            )
 
         results.append(
             {
@@ -1125,6 +1174,7 @@ def write_outbox(
     ensure_dir(resolved_audit_root)
     audit_path = _unique_file_path(resolved_audit_root, _audit_filename("write_audit"))
     _write_audit(audit_payload=audit_payload, audit_path=audit_path)
+    _emit_progress(progress_callback, "complete", message="write: complete")
 
     return {
         "processed_count": len(results),

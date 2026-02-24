@@ -6,3 +6,4 @@ dependencies:
   - requests
   - pyyaml
   - jsonschema
+  - tqdm=4.50.2

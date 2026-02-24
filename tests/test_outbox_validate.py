@@ -308,6 +308,39 @@ class TestOutboxValidate(unittest.TestCase):
             issue_codes = [issue["code"] for issue in failed_report["issues"]]
             self.assertIn("TEAM_AREA_PATH_NOT_ALLOWED", issue_codes)
 
+    def test_validate_progress_callback_emits_step_events(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            policy_dir = root / "policy"
+            generated_dir = root / "generated"
+            outbox_root = root / "outbox"
+            ready_dir = outbox_root / "ready"
+
+            _base_policy(policy_dir)
+            _base_generated(generated_dir)
+            _write_json(ready_dir / "good.json", _valid_bundle_payload())
+
+            events = []
+
+            def progress_callback(event: str, payload: dict) -> None:
+                events.append((event, payload))
+
+            result = validate_outbox(
+                bundle=None,
+                validate_all=True,
+                policy_dir=policy_dir,
+                generated_dir=generated_dir,
+                schema_path=Path("schema/bundle.schema.json"),
+                outbox_root=outbox_root,
+                progress_callback=progress_callback,
+            )
+
+            self.assertEqual(result["failed_count"], 0)
+            self.assertTrue(any(event == "set_total" for event, _ in events))
+            step_messages = [payload.get("message", "") for event, payload in events if event == "step"]
+            self.assertTrue(any("schema validation" in message for message in step_messages))
+            self.assertTrue(any("finalize (passed)" in message for message in step_messages))
+
 
 if __name__ == "__main__":
     unittest.main()
